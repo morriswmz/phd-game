@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "noImplicitAny": true,
+        "removeComments": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "sourceMap": true,
+        "target": "es5",
+        "rootDir": "./src",
+        "outDir": "./build",
+        "lib": [
+            "dom", "es2015", "es2015.promise"
+        ]
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}

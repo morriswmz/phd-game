@@ -1,0 +1,10 @@
+---
+items:
+  - id: idea
+  - id: preliminaryResult
+  - id: majorResult
+  - id: figure
+  - id: paper
+  - id: draftPaper
+  - id: submittedPaper
+  - id: conferencePaper

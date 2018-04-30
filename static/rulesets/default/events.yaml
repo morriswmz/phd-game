@@ -1,0 +1,225 @@
+---
+- id: LostAllHope
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: player.hope < 0
+  actions:
+  - id: EndGame
+    message: message.lostAllHope
+    confirm: message.restart
+    winning: false
+- id: Graduated
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: itemCount('paper') >= 3
+  actions:
+  - id: EndGame
+    message: message.graduated
+    confirm: message.restart
+    winning: true
+- id: TheBeginning
+  trigger: MonthBegin
+  once: true
+  actions:
+  - id: DisplayMessage
+    message: message.beginning
+    confirm: message.excited
+- id: MonthBeginTasks
+  trigger: MonthBegin
+  actions:
+  - id: UpdateVariable
+    variable: player.hope
+    value: player.hope - 1
+  - id: DisplayChoices
+    message: message.newMonth
+    choices:
+    - message: message.readPapers
+      actions:
+      - id: GiveItem
+        itemId: idea
+        amount: 1
+      - id: DisplayMessage
+        message: message.gainNewIdea
+        confirm: message.great
+    - message: message.workOnIdea
+      requirement: itemCount('idea') > 0
+      actions:
+      - id: GiveItem
+        itemId: idea
+        amount: -1
+      - id: Random
+        groups:
+        - weight: 0.9
+          actions:
+          - id: DisplayMessage
+            message: message.gainPrelimResult
+            confirm: message.soundsInteresting
+          - id: GiveItem
+            itemId: preliminaryResult
+            amount: 1
+        - weight: 0.1
+          actions:
+          - id: DisplayMessage
+            message: message.ideaNotWorking
+            confirm: message.unfortunate
+    - message: message.workOnPrelimResult
+      requirement: itemCount('preliminaryResult') > 0
+      actions:
+      - id: Random
+        groups:
+        - weight: 0.7
+          actions:
+          - id: DisplayMessage
+            message: message.gainMajorResult
+            confirm: message.soundsInteresting
+          - id: UpdateItemAmounts
+            updates:
+              majorResult: 1
+              preliminaryResult: -1
+        - weight: 0.3
+          actions:
+          - id: DisplayMessage
+            message: message.noMajorResult
+            confirm: message.unfortunate
+    - message: message.workOnFigure
+      requirement: itemCount('majorResult') > 0 && itemCount('figure') < 2 * itemCount('majorResult')
+      actions:
+      - id: Random
+        groups:
+        - weight: 0.5
+          actions:
+          - id: DisplayMessage
+            message: message.gainFigure
+            confirm: message.great
+          - id: GiveItem
+            itemId: figure
+            amount: 1  
+        - weight: 0.4
+          actions:
+          - id: DisplayMessage
+            message: message.noFigure
+            confirm: message.ok
+        - weight: 0.1
+          actions:
+          - id: DisplayMessage
+            message: message.wrongFigure
+            confirm: message.unfortunate
+          - id: UpdateItemAmounts
+            updates:
+              majorResult: -1
+              preliminaryResult: 1
+    - message: message.workOnPaper
+      requirement: itemCount('majorResult') > 0 && itemCount('figure') > 1
+      actions:
+      - id: DisplayMessage
+        message: message.draftPaperComplete
+        confirm: message.great
+      - id: UpdateItemAmounts
+        updates:
+          submittedPaper: 1
+          majorResult: -1
+          figure: -2
+    - message: message.slackOff
+      actions:
+      - id: Random
+        groups:
+        - weight: 0.4
+          actions:
+          - id: DisplayMessage
+            message: message.caughtSlackOff
+            confirm: message.oops
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope - 5
+        - weight: 0.6
+          actions:
+          - id: DisplayMessage
+            message: message.slackOffSuccess
+            confirm: message.great
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope + 5
+# review events
+- id: PaperReview
+  trigger: MonthEnd
+  probability: 0.7
+  conditions:
+  - id: Expression
+    expression: itemCount('submittedPaper') > 1
+  actions:
+  - id: CoinFlip
+    probability: calcEffectValue('player.paperAcceptanceBoost') + 0.4
+    success:
+    - id: DisplayMessage
+      message: message.paperAccepted
+      confirm: message.party
+    - id: UpdateItemAmounts
+      updates:
+        submittedPaper: -1
+        paper: 1
+    - id: UpdateVariable
+      variable: player.hope
+      value: player.hope + 10
+    fail:
+    - id: DisplayMessage
+      message: message.paperRejected
+      confirm: message.unfortunate
+    - id: UpdateItemAmounts
+      updates:
+        submittedPaper: -1
+        majorResult: 1
+        figure: 2
+    - id: UpdateVariable
+      variable: player.hope
+      value: player.hope - 5
+# idea lost event chain
+- id: IdeaObsolete
+  trigger: MonthEnd
+  conditions:
+  - id: Expression
+    expression: itemCount('idea') > 1
+  probability: 0.4
+  actions:
+  - id: DisplayMessage
+    message: message.ideaDoneByOthers
+    confirm: message.unfortunate
+  - id: GiveItem
+    itemId: idea
+    amount: -1
+  - id: UpdateVariable
+    variable: player.hope
+    value: player.hope - 5
+- id: EquimentBroken
+  trigger: MonthEnd
+  probability: 0.02
+  actions:
+  - id: DisplayChoices
+    message: message.equipmentBroken
+    choices:
+    - message: message.doNothing
+      actions:
+      - id: DisplayMessage
+        message: message.cannotUseEquipment
+        confirm: message.ok
+      - id: UpdateVariable
+        variable: player.hope
+        value: player.hope - 2
+    - message: message.fixEquipment
+      actions:
+      - id: Random
+        groups:
+        - weight: 0.4
+          actions:
+          - id: DisplayMessage
+            message: message.equipmentFixed
+            confirm: message.great
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope + 2
+        - weight: 0.6
+          actions:
+          - id: DisplayMessage
+            message: message.equipmentNotFixed
+            confirm: message.unfortunate

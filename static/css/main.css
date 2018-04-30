@@ -1,0 +1,50 @@
+html {
+    min-height: 100%;
+}
+body {
+    min-height: 100%;
+    font-size: 14px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(#87ceeb, #00bfff) no-repeat;
+}
+a, a:hover, a:active, a:link {
+    text-decoration: none;
+}
+#game_window {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+}
+.panel {
+    border: 3px solid #fff;
+    background: #fff4e1;
+    padding: 0.5em;
+    margin: 0.5em auto;
+    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.1);
+}
+.panel h3 {
+    margin-top: 0;
+}
+#status_bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+#message_window {
+    min-height: 240px;
+    text-align: center
+}
+#choices_container a {
+    display: block;
+    padding: 0.3em;
+    margin: 0.3em 0;
+    text-align: center;
+    border: 3px solid #dec158;
+    background: wheat;
+    color: #000;
+}
+#choices_container a:hover,
+#choices_container a:active {
+    color: #000;
+    border: 3px solid #a58954;
+}

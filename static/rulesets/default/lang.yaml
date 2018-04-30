@@ -1,0 +1,63 @@
+---
+item.idea: Idea
+item.idea.description: A simple idea to be developed to a minor result.
+item.preliminaryResult: Preliminary Result
+item.preliminaryResult.description: Some preliminary findings.
+item.majorResult: Major Result
+item.majorResult.description: Some major findings. Enough for a new paper.
+item.figure: Figure
+item.figure.description: A nice looking figure.
+item.draftPaper: Draft Paper
+item.submittedPaper: Submitted Paper
+item.submittedPaper.description: A submitted paper, waiting for the judgement from the reviewers.
+item.paper: Paper
+item.paper.description: A published paper. All of your hard work!
+item.confPaper: Conference Paper
+# main events
+message.beginning: Congradulations. You have been admitted as a new PhD student here.
+message.newMonth: A new month begins. What should I do?
+message.readPapers: Let us read some papers.
+message.gainNewIdea: After scratching your head with several papers, you gain a new idea.
+message.workOnIdea: Let us work on developing an idea.
+message.gainPrelimResult: You obtain some preliminary results.
+message.ideaNotWorking: It turns out that this idea is not working.
+message.workOnPrelimResult: Let us work on developing a preliminary result.
+message.gainMajorResult: You develop a major result.
+message.noMajorResult: It seems that you need more time to further develop this preliminary result.
+message.workOnFigure: Let us conduct some experiments to verify our major results.
+message.gainFigure: The experiments went very well. You gain a nice figure.
+message.noFigure: It seems that you need to conduct more experiments.
+message.wrongFigure: The experimental results contradict your results. You need to figure out what went wrong.
+message.workOnPaper: Let us work on a draft paper.
+message.draftPaperComplete: You complete your draft paper and submitted it!
+message.paperAccepted: "We are pleased to inform you that your manuscript has been ACCEPTED for publication."
+message.paperRejected: "Based on the reviewers' comments, I regret to inform you that your manuscript has been rejected for publication."
+message.slackOff: Let us slack off.
+message.caughtSlackOff: Professor caught you slacking off and reminded you of your tasks via various emails.
+message.slackOffSuccess: You feel relaxed.
+message.lostAllHope: You lost all hope and quitted your PhD.
+message.graduated: Congratulations! You finally earned your degree.
+# idea lost event
+message.ideaDoneByOthers: You found one of your ideas appears in a recently published paper.
+# equipment broken event
+message.equipmentBroken: Equipment broken by new students.
+message.doNothing: Let us not do anything.
+message.cannotUseEquipment: You cannot use lab equipments. That sucks.
+message.fixEquipment: Let us try to fix it.
+message.equipmentFixed: It is working. Praise the magic of engineering.
+message.equipmentNotFixed: You tried to fix it. However, it is still not working.
+# conference event
+message.conferenceOpportunity: The great international conference of PhD simulation is calling for papers.
+message.submitConfPaper: Submit one of the preliminary results as a conference paper.
+message.noSubmitConfPaper: Let us not bother with this.
+message.confPaperRejected: Your conference paper is rejected by the reviewers.
+message.confPaperAccepted: Your conference paper gets accepted!
+# confirms
+message.oops: Oops.
+message.great: Great.
+message.ok: Okay.
+message.excited: Excited.
+message.party: Let us have a party to celebrate it.
+message.soundsInteresting: Sounds interesting.
+message.unfortunate: That is unfortunate.
+message.restart: Let us travel back in time and start again.
