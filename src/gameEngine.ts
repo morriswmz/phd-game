@@ -1,22 +1,145 @@
-import { ActionProxy } from './event/core';
-import { GameStateBase } from './gameState';
-import { GuiGame } from './gui/guiGame';
+import { GuiActionProxy } from './event/core';
+import { GameState, EndGameState } from './gameState';
+import { GuiGameWindow, GuiGame } from './gui/guiGame';
+import { ItemRegistry, Inventory } from './effect/item';
+import { GameEventEngine } from './event/engine';
+import { EventExpressionEngine } from './event/expression';
+import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame } from './event/actions';
+import { EventConditionFactory, ECExpression } from './event/conditions';
+import { GameEventLoader } from './event/loader';
 
-export class GameActionProxy implements ActionProxy {
+export interface GameConfig {
+    itemDefinitionUrl: string;
+    eventDefinitionUrl: string;
+}
 
-    constructor(private _gameState: GameStateBase, private _guiGame: GuiGame) {
+/**
+ * Central class for the game.
+ */
+export class GameEngine {
+
+    private _config: GameConfig;
+    private _itemRegistry: ItemRegistry;
+    private _actionProxy: GuiActionProxy;
+    private _gameState: GameState;
+    private _expressionEngine: EventExpressionEngine;
+    private _eventEngine: GameEventEngine;
+    private _actionFactory: EventActionFactory;
+    private _conditionFactory: EventConditionFactory;
+
+    private _dataLoaded: boolean = false;
+
+    constructor(config: GameConfig, ap: GuiActionProxy) {
+        // Copy the configuration.
+        this._config = Object.assign({}, config);
+        this._actionProxy = ap;
+        this._itemRegistry = new ItemRegistry();
+        this._gameState = new GameState(new Inventory(this._itemRegistry));
+        this._expressionEngine = new EventExpressionEngine(this._gameState);
+        this._eventEngine = new GameEventEngine(this._gameState, this._actionProxy, this._expressionEngine);
+        this._actionFactory = new EventActionFactory(this._expressionEngine);
+        this._conditionFactory = new EventConditionFactory(this._expressionEngine);
     }
 
-    get gameState(): GameStateBase {
+    /**
+     * Retrieves the game state.
+     */
+    get gameState(): GameState {
         return this._gameState;
     }
 
-    displayMessage(message: string, confirm: string): Promise<void> {
-        return this._guiGame.displayMessage(message, confirm);
+    /**
+     * Retrieves the action proxy.
+     */
+    get actionProxy(): GuiActionProxy {
+        return this._actionProxy;
     }
 
-    displayChoices(message: string, choices: Array<[string, number]>): Promise<number> {
-        return this._guiGame.displayChoices(message, choices);
+    /**
+     * Loads game data.
+     */
+    async loadGameData(): Promise<void> {
+        if (this._dataLoaded) return;
+        this._initFactories();
+        await this._itemRegistry.loadItems(this._config.itemDefinitionUrl);
+        const eventLoader = new GameEventLoader(this._conditionFactory, this._actionFactory);
+        const events = await eventLoader.load(this._config.eventDefinitionUrl);
+        this._eventEngine.registerEvents(events);
+        this._dataLoaded = true;
+    }
+
+    private _initFactories(): void {
+        // Event factory
+        this._actionFactory.registerDeserializer(EALog);
+        this._actionFactory.registerDeserializer(EADisplayMessage);
+        this._actionFactory.registerDeserializer(EADisplayRandomMessage);
+        this._actionFactory.registerDeserializer(EADisplayChoices);
+        this._actionFactory.registerDeserializer(EARandom);
+        this._actionFactory.registerDeserializer(EACoinFlip);
+        this._actionFactory.registerDeserializer(EAUpdateVariable);
+        this._actionFactory.registerDeserializer(EAUpdateVariables);
+        this._actionFactory.registerDeserializer(EAGiveItem);
+        this._actionFactory.registerDeserializer(EAUpdateItemAmounts);
+        this._actionFactory.registerDeserializer(EAEndGame);
+        // Condition factory
+        this._conditionFactory.registerDeserializer(ECExpression);
+    }
+
+    /**
+     * Starts (or restarts) the game.
+     */
+    async start(): Promise<void> {
+        if (!this._dataLoaded) {
+            await this.loadGameData();
+        }
+        this._gameState.reset();
+        this._gameState.setVar('month', 1);
+        this._gameState.setVar('year', 1);
+        this._gameState.setVar('player.hope', 50);
+        this._gameState.setVarLimits('player.hope', 0, 100);
+        this._eventEngine.enableAll();
+        await this._eventEngine.trigger('Initialization');
+    }
+
+    /**
+     * Advance one step.
+     */
+    async step(): Promise<void> {
+        if (this._gameState.endGameState !== EndGameState.None) {
+            // Restart the game
+            await this.start();
+            return;
+        }
+        await this._eventEngine.trigger('MonthBegin');
+        let month = this._gameState.getVar('month', true) + 1;
+        let year = this._gameState.getVar('year', true);
+        if (month === 13) {
+            month = 1;
+            ++year;
+            this._gameState.setVar('year', year);
+            await this._eventEngine.trigger('YearBegin');
+        }
+        this._gameState.setVar('month', month);
+    }
+    
+}
+
+export class GameActionProxy implements GuiActionProxy {
+
+    private _guiGame: GuiGame | undefined;
+
+    attachGui(gui: GuiGame): void {
+        this._guiGame = gui;
+    }
+
+    displayMessage(message: string, confirm: string, icon?: string): Promise<void> {
+        if (!this._guiGame) throw new Error('No attached GUI.');
+        return this._guiGame.displayMessage(message, confirm, icon);
+    }
+
+    displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number> {
+        if (!this._guiGame) throw new Error('No attached GUI.');
+        return this._guiGame.displayChoices(message, choices, icon);
     }
 
 }

@@ -1,3 +1,5 @@
+import { Item } from "./item";
+
 export enum ModifierType {
     Absolute,
     Relative,
@@ -40,8 +42,12 @@ export class EffectProviderRegistry<T extends EffectProvider> {
         this._registry[item.id] = item;
     }
 
-    has(id: string): boolean {
-        return this._registry[id] != undefined;
+    has(item: T | string): boolean {
+        if (typeof item === 'string') {
+            return this._registry[item] != undefined;
+        } else {
+            return this._registry[item.id] === item;
+        }
     }
 
     get(id: string): T {
@@ -51,9 +57,24 @@ export class EffectProviderRegistry<T extends EffectProvider> {
 
 }
 
+export class EffectProviderCollectionChangedEvent<T extends EffectProvider> {
+    // Indicates whether this is a clear event.
+    clear: boolean;
+    item: T | undefined;
+    oldCount: number;
+    newCount: number;
+
+    constructor(clear: boolean, item: T | undefined, oldCount: number, newCount: number) {
+        this.clear = clear;
+        this.item = item;
+        this.oldCount = oldCount;
+        this.newCount = newCount;
+    }
+}
+
 /**
  * An effect provider collection can be a player's inventory or status
- * collection.
+ * collection. Each effect provider can have different amounts.
  */
 export class EffectProviderCollection<T extends EffectProvider> {
 
@@ -64,49 +85,80 @@ export class EffectProviderCollection<T extends EffectProvider> {
         this._registry = registry;
     }
 
+    onChanged: ((sender: EffectProviderCollection<T>, event: EffectProviderCollectionChangedEvent<T>) => void) | undefined;
+
     /**
-     * Determines the maximum number of the items of the same type (same id).
+     * Determines the maximum number of the effect providers of the same type
+     * (same id).
      */
     get maxStackSize(): number {
         return Infinity;
     }
 
+    /**
+     * Gets an readonly view of all the effect providers.
+     */
     get items(): { readonly [id: string]: Readonly<[T, number]>; } {
         return this._items;
     }
 
+    /**
+     * Adds an new effect provider.
+     * @param item
+     * @param count
+     */
     add(item: T | string, count: number = 1): void {
         if (typeof item === 'string') item = this._registry.get(item);
         if (count < 0 || Math.floor(count) !== count) throw new Error('Count must be a positive integer.');
         if (this._items[item.id] == undefined) {
             this._items[item.id] = [item, count];
+            this.dispatchChangeEvent(new EffectProviderCollectionChangedEvent(false, item, 0, count));
         } else {
+            let oldCount = this._items[item.id][1];
             this._items[item.id][1] += count;
             if (this._items[item.id][1] > this.maxStackSize) {
                 this._items[item.id][1] = this.maxStackSize;                
             }
+            this.dispatchChangeEvent(new EffectProviderCollectionChangedEvent(false, item, this._items[item.id][1], oldCount));
         }
-        let i = this.items;
     }
 
+    /**
+     * Removes an effect provider.
+     * @param item 
+     * @param count 
+     */
     remove(item: T | string, count: number = 1): void {
         if (typeof item === 'string') item = this._registry.get(item);
         if (count < 0 || Math.floor(count) !== count) throw new Error('Count must be a positive integer.');
         if (this._items[item.id] == undefined) return;
+        let oldCount = this._items[item.id][1];
         this._items[item.id][1] -= count;
         if (this._items[item.id][1] <= 0) {
             delete this._items[item.id];
+            this.dispatchChangeEvent(new EffectProviderCollectionChangedEvent(false, item, 0, oldCount));
+        } else {
+            this.dispatchChangeEvent(new EffectProviderCollectionChangedEvent(false, item, this._items[item.id][1], oldCount));
         }
     }
 
     clear(): void {
+        this.dispatchChangeEvent(new EffectProviderCollectionChangedEvent<T>(true, undefined, 0, 0));
         this._items = {};
     }
 
+    count(item: T | string): number {
+        if (typeof item === 'string') {
+            item = this._registry.get(item);
+        }
+        return this._items[item.id] ? this.items[item.id][1] : 0;
+    }
+
     /**
-     * Calculates the combined effect value by considering all the items in
-     * this collection. For instance, if two items in this collection have
-     * effects {'player.hopeBoost', Modifiers.Absolute, 1.0} and 
+     * Calculates the combined effect value by considering all the effect
+     * providers in this collection. For instance, if two effect providers in
+     * this collection have effects
+     * {'player.hopeBoost', Modifiers.Absolute, 1.0} and 
      * {'player.hopeBoost', Modifiers.Absolute, 1.5}, respectively,
      * then this function will return 2.5 for the input 'player.hopeBoost'.
      * Equation for calculating the final value
@@ -140,6 +192,12 @@ export class EffectProviderCollection<T extends EffectProvider> {
             }
         }
         return a * m;
+    }
+
+    protected dispatchChangeEvent(event: EffectProviderCollectionChangedEvent<T>): void {
+        if (this.onChanged) {
+            this.onChanged(this, event);
+        }
     }
 
 }

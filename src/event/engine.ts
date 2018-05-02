@@ -1,5 +1,5 @@
-import { GameEvent, ActionProxy } from './core';
-import { GameStateBase, EndGameState } from '../gameState';
+import { GameEvent, GuiActionProxy } from './core';
+import { GameState, EndGameState } from '../gameState';
 import { EventExpressionEvaluator, EventExpressionEngine } from './expression';
 
 export class GameEventEngine {
@@ -7,18 +7,18 @@ export class GameEventEngine {
     private _events: { [key: string]: GameEvent[]; } = {};
     // id => (GameEvent, disabled)
     private _eventIdMap: { [key: string]: [GameEvent, boolean]; } = {};
-    private _gameState: GameStateBase;
-    private _actionProxy: ActionProxy;
+    private _gameState: GameState;
+    private _actionProxy: GuiActionProxy;
     // Event actions and condition have access to the same expression evaluator.
     private _exprEngine: EventExpressionEvaluator;
 
-    constructor(gs: GameStateBase, ap: ActionProxy, exprEngine: EventExpressionEngine) {
+    constructor(gs: GameState, ap: GuiActionProxy, exprEngine: EventExpressionEngine) {
         this._gameState = gs;
         this._actionProxy = ap;
         this._exprEngine = exprEngine;
     }
 
-    public onActionExecuted: ((gs: GameStateBase) => void ) | undefined = undefined;
+    public onActionExecuted: ((gs: GameState) => void ) | undefined = undefined;
     
     enableAll(): void {
         for (let id in this._eventIdMap) {
@@ -89,7 +89,7 @@ export class GameEventEngine {
             ++this._gameState.occurredEvents[e.id];
             // Execute actions
             for (let a of e.actions) {
-                await a.execute(this._actionProxy, this._exprEngine);
+                await a.execute(this._gameState, this._actionProxy, this._exprEngine);
                 if (this.onActionExecuted) this.onActionExecuted(this._gameState);
                 if (this._gameState.endGameState !== EndGameState.None) {
                     // Stop processing further actions or events

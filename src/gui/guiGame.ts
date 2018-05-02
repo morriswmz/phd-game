@@ -1,7 +1,18 @@
 import { LocalizationDictionary } from '../i18n/localization';
-import { GameStateBase } from '../gameState';
+import { GameState, VariableChangedEvent } from '../gameState';
+import { Inventory, Item } from '../effect/item';
+import { EffectProviderCollectionChangedEvent } from '../effect/effect';
+import { renderText } from './textRenderer';
 
-export class GuiGame {
+export interface GuiGame {
+
+    displayMessage(message: string, confirm: string, icon?: string): Promise<void>;
+
+    displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number>;
+
+}
+
+export class GuiGameWindow implements GuiGame {
 
     private _messageContainer: HTMLParagraphElement;
     private _choicesContainer: HTMLElement;
@@ -10,13 +21,19 @@ export class GuiGame {
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
 
-    constructor(private _container: HTMLDivElement, private _ldict: LocalizationDictionary) {
+    constructor(private _container: HTMLDivElement, private _ldict: LocalizationDictionary, private _gameState: GameState) {
         this._messageContainer = this.retrieveElement('message_container');
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
         this._choicesContainer = this.retrieveElement('choices_container');
         this._itemsContainer = this.retrieveElement('item_list');
         this._statusContainer = this.retrieveElement('status_list');
+        this._gameState.onVariableChanged = (gs, e) => {
+            this.handleVariableUpdate(gs, e);
+        };
+        this._gameState.playerInventory.onChanged = (inv, e) => {
+            this.updateItemList(inv, e);
+        };
     }
 
     retrieveElement<T extends HTMLElement>(id: string): T {
@@ -25,28 +42,44 @@ export class GuiGame {
         return <T>el;
     }
 
-    update(gs: GameStateBase): void {
-        this._hopeMeter.textContent = `Hope: ${gs.getVar('player.hope')}/100`;
-        this._timeMeter.textContent = `Year: ${gs.variables.year}, Month: ${gs.variables.month + 1}`;
-        this.updateItemList(gs);
+    handleVariableUpdate(gs: GameState, e: VariableChangedEvent): void {
+        if (e.clear) return;
+        switch (e.varName) {
+            case 'player.hope':
+                if (e.newValue < 40 && e.newValue > 20) {
+                    this._hopeMeter.className = 'warning';
+                } else if (e.newValue <= 20) {
+                    this._hopeMeter.className = 'critical';
+                } else {
+                    this._hopeMeter.className = 'normal';
+                }
+                this._hopeMeter.textContent = `Hope ${e.newValue}/${gs.getVarLimits(e.varName)[1]}`;
+                break;
+            case 'year':
+            case 'month':
+                this._timeMeter.textContent = `Year ${gs.getVar('year', true)} Month ${gs.getVar('month', true)}`;
+                break;
+        }
     }
 
-    updateItemList(gs: GameStateBase): void {
+    updateItemList(inv: Inventory, e: EffectProviderCollectionChangedEvent<Item>): void {
         while (this._itemsContainer.lastChild) {
             this._itemsContainer.removeChild(this._itemsContainer.lastChild);
         }
-        for (const itemId in gs.playerInventory.items) {
+        if (e.clear) return;
+        for (const itemId in inv.items) {
             let node = document.createElement('li');
-            let item = gs.playerInventory.items[itemId];
-            node.textContent = this._ldict.translate(item[0].unlocalizedName) + ': ' + item[1].toString();
+            let item = inv.items[itemId];
+            if (item[0].rarity > 5) node.className = 'r_rare';
+            node.textContent = this._ldict.translate(item[0].unlocalizedName) + ' x' + item[1].toString();
             node.title = this._ldict.translate(item[0].unlocalizedDescription);
             this._itemsContainer.appendChild(node);
         }
     }
     
-    displayMessage(message: string, confirm: string): Promise<void> {
+    displayMessage(message: string, confirm: string, icon?: string): Promise<void> {
         return new Promise<void>(resolve => {
-            this._messageContainer.textContent = this._ldict.translate(message);
+            this.updateMessage(message, icon);
             const btnConfirm = document.createElement('a');
             btnConfirm.href = 'javascript: void(0)';
             btnConfirm.textContent = this._ldict.translate(confirm);
@@ -60,9 +93,9 @@ export class GuiGame {
         });
     }
 
-    displayChoices(message: string, choices: Array<[string, number]>): Promise<number> {
+    displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number> {
         return new Promise<number>(resolve => {
-            this._messageContainer.textContent = this._ldict.translate(message);
+            this.updateMessage(message, icon);
             let choiceButtons : HTMLAnchorElement[] = [];
             for (let i = 0;i < choices.length;i++) {
                 let btn = document.createElement('a');
@@ -79,6 +112,14 @@ export class GuiGame {
                 this._choicesContainer.appendChild(btn);
             }
         });
+    }
+
+    updateMessage(message: string, icon?: string): void {
+        let html = renderText(message, this._ldict, this._gameState);
+        if (icon) {
+            html += `<p><img src="${icon}" /></p>`;
+        }
+        this._messageContainer.innerHTML = html;
     }
 
 }

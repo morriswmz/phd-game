@@ -4,7 +4,7 @@ import { safeLoad } from 'js-yaml';
 
 export class Item implements EffectProvider {
 
-    constructor(private _id: string, private _effects: EffectCollection = {}) {
+    constructor(private _id: string, private _rarity: number, private _effects: EffectCollection = {}) {
 
     }
 
@@ -18,6 +18,10 @@ export class Item implements EffectProvider {
 
     get unlocalizedDescription(): string {
         return this.unlocalizedName + '.description';
+    }
+
+    get rarity(): number {
+        return this._rarity;
     }
 
     getEffects(): EffectCollection {
@@ -45,7 +49,8 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
             } else {
                 effects = {};
             }
-            this.add(new Item(itemDef['id'], effects));
+            let rarity = typeof itemDef['rarity'] === 'number' ? itemDef['rarity'] : 0;
+            this.add(new Item(itemDef['id'], rarity, effects));
         }
     }
 
@@ -55,13 +60,8 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
 
 }
 
+type InventoryChangeHandler = (inv: Inventory, item: Item, newAmount: number, oldAmount: number) => void;
+
 export class Inventory extends EffectProviderCollection<Item> {
-
-    count(item: Item | string): number {
-        if (typeof item === 'string') {
-            item = this._registry.get(item);
-        }
-        return this._items[item.id] ? this.items[item.id][1] : 0;
-    }
-
+    
 }

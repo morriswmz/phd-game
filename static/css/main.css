@@ -4,7 +4,7 @@ html {
 body {
     min-height: 100%;
     font-size: 14px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Press Start 2P', cursive, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Microsoft YaHei';
     background: linear-gradient(#87ceeb, #00bfff) no-repeat;
 }
 a, a:hover, a:active, a:link {
@@ -16,19 +16,27 @@ a, a:hover, a:active, a:link {
     margin: 0 auto;
 }
 .panel {
-    border: 3px solid #fff;
+    border: 3px solid #666;
     background: #fff4e1;
     padding: 0.5em;
     margin: 0.5em auto;
-    box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
 }
 .panel h3 {
     margin-top: 0;
+    font-weight: normal;
 }
 #status_bar {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
+}
+.warning {
+    color: #ffb300;
+}
+.critical {
+    color: #b50000;
+    animation: shake 0.5s infinite;
 }
 #message_window {
     min-height: 240px;
@@ -36,15 +44,59 @@ a, a:hover, a:active, a:link {
 }
 #choices_container a {
     display: block;
-    padding: 0.3em;
+    padding: 0.4em;
     margin: 0.3em 0;
     text-align: center;
     border: 3px solid #dec158;
     background: wheat;
     color: #000;
+    transform: scale(0.5);
+    animation: popout 0.2s forwards;
 }
 #choices_container a:hover,
 #choices_container a:active {
     color: #000;
     border: 3px solid #a58954;
+}
+#choices_container a:nth-child(2) { animation-delay: 0.02s; }
+#choices_container a:nth-child(3) { animation-delay: 0.04s; }
+#choices_container a:nth-child(4) { animation-delay: 0.06s; }
+#choices_container a:nth-child(5) { animation-delay: 0.08s; }
+#choices_container a:nth-child(6) { animation-delay: 0.10s; }
+#choices_container a:nth-child(7) { animation-delay: 0.12s; }
+#choices_container a:nth-child(8) { animation-delay: 0.14s; }
+
+.r_common {}
+.r_rare {
+    color: #8b008b;
+}
+
+footer {
+    text-align: center;
+    margin: 2em auto;
+    font-size: 0.5em;
+    color: #fff;
+}
+footer a,
+footer a:hover,
+footer a:active,
+footer a:link {
+    color: #fff;
+    text-decoration: underline;
+}
+
+@keyframes popout {
+    from {transform: scale(0.5)}
+    80% {transform: scale(1.01)}
+    to {transform: scale(1)}
+}
+@keyframes shake {
+    10%, 30% {transform: translate(0, 2px)}
+    20%, 40% {transform: translate(0, -2px)}
+}
+
+@media screen and (max-width: 720px) {
+    body {
+        font-size: 0.7em;
+    }
 }

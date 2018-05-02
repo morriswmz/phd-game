@@ -58,6 +58,10 @@ const regexGroups = [
     }
 ];
 
+export function isVariableName(s: string): boolean {
+    return /^[a-z_$][a-z0-9_$]*(\.[a-z_$][a-z0-9_$]*)*$/i.test(s);
+}
+
 /**
  * Tokenizes a simple expression.
  * @param expr String representation of the simple expression.

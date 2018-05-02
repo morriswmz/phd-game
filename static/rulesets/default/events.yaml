@@ -1,9 +1,18 @@
 ---
+- id: Init
+  trigger: Initialization
+  once: true
+  actions:
+  - id: UpdateVariables
+    updates:
+      # number of papers read by the player
+      player.readPapers: 0
+      player.equipmentBroken: 0
 - id: LostAllHope
   trigger: MonthBegin
   conditions:
   - id: Expression
-    expression: player.hope < 0
+    expression: player.hope <= 0
   actions:
   - id: EndGame
     message: message.lostAllHope
@@ -26,23 +35,47 @@
   - id: DisplayMessage
     message: message.beginning
     confirm: message.excited
-- id: MonthBeginTasks
+- id: LateYearPenalty
   trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: year >= 3
   actions:
   - id: UpdateVariable
     variable: player.hope
     value: player.hope - 1
+# idea -> prelim -> major -> 2 figures -> submitted paper
+- id: MonthBeginTasks
+  trigger: MonthBegin
+  actions:
   - id: DisplayChoices
     message: message.newMonth
     choices:
     - message: message.readPapers
       actions:
-      - id: GiveItem
-        itemId: idea
-        amount: 1
-      - id: DisplayMessage
-        message: message.gainNewIdea
-        confirm: message.great
+      - id: UpdateVariable
+        variable: player.readPapers
+        value: player.readPapers + 1
+      - id: CoinFlip
+        # increase the success rate as the player reads more papers
+        probability: 0.75 + player.readPapers / 100
+        success:
+        - id: GiveItem
+          itemId: idea
+          amount: 1
+        - id: DisplayMessage
+          message: message.gainNewIdea
+          confirm: message.great
+        - id: UpdateVariables
+          updates:
+            player.hope: player.hope + 2
+        fail:
+        - id: DisplayMessage
+          message: message.oldIdea
+          confirm: message.oops
+        - id: UpdateVariable
+          variable: player.hope
+          value: player.hope - 5
     - message: message.workOnIdea
       requirement: itemCount('idea') > 0
       actions:
@@ -59,11 +92,17 @@
           - id: GiveItem
             itemId: preliminaryResult
             amount: 1
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope + 2
         - weight: 0.1
           actions:
           - id: DisplayMessage
             message: message.ideaNotWorking
             confirm: message.unfortunate
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope - 5
     - message: message.workOnPrelimResult
       requirement: itemCount('preliminaryResult') > 0
       actions:
@@ -78,13 +117,19 @@
             updates:
               majorResult: 1
               preliminaryResult: -1
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope + 3
         - weight: 0.3
           actions:
           - id: DisplayMessage
             message: message.noMajorResult
             confirm: message.unfortunate
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope - 3
     - message: message.workOnFigure
-      requirement: itemCount('majorResult') > 0 && itemCount('figure') < 2 * itemCount('majorResult')
+      requirement: itemCount('majorResult') > 0 && itemCount('figure') < 2 * itemCount('majorResult') && player.equipmentBroken === 0
       actions:
       - id: Random
         groups:
@@ -95,12 +140,18 @@
             confirm: message.great
           - id: GiveItem
             itemId: figure
-            amount: 1  
+            amount: 1
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope + 3
         - weight: 0.4
           actions:
           - id: DisplayMessage
             message: message.noFigure
             confirm: message.ok
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope - 3
         - weight: 0.1
           actions:
           - id: DisplayMessage
@@ -110,6 +161,9 @@
             updates:
               majorResult: -1
               preliminaryResult: 1
+          - id: UpdateVariable
+            variable: player.hope
+            value: player.hope - 5
     - message: message.workOnPaper
       requirement: itemCount('majorResult') > 0 && itemCount('figure') > 1
       actions:
@@ -121,6 +175,19 @@
           submittedPaper: 1
           majorResult: -1
           figure: -2
+      - id: UpdateVariable
+        variable: player.hope
+        value: player.hope + 5
+    - message: message.revisePaper
+      requirement: itemCount('rejectedPaper') > 0
+      actions:
+      - id: DisplayMessage
+        message: message.revisionComplete
+        confirm: message.hopeAccepted
+      - id: UpdateItemAmounts
+        updates:
+          resubmittedPaper: 1
+          rejectedPaper: -1
     - message: message.slackOff
       actions:
       - id: Random
@@ -142,12 +209,15 @@
             variable: player.hope
             value: player.hope + 5
 # review events
+# submitted -> accept
+#           -> reject -> resubmit -> accept
+#                                 -> reject -> lost figures
 - id: PaperReview
-  trigger: MonthEnd
-  probability: 0.7
+  trigger: MonthBegin
+  probability: 0.8
   conditions:
   - id: Expression
-    expression: itemCount('submittedPaper') > 1
+    expression: itemCount('submittedPaper') >= 1
   actions:
   - id: CoinFlip
     probability: calcEffectValue('player.paperAcceptanceBoost') + 0.4
@@ -161,7 +231,7 @@
         paper: 1
     - id: UpdateVariable
       variable: player.hope
-      value: player.hope + 10
+      value: player.hope + 5
     fail:
     - id: DisplayMessage
       message: message.paperRejected
@@ -169,17 +239,47 @@
     - id: UpdateItemAmounts
       updates:
         submittedPaper: -1
-        majorResult: 1
-        figure: 2
+        rejectedPaper: 1
     - id: UpdateVariable
       variable: player.hope
-      value: player.hope - 5
-# idea lost event chain
-- id: IdeaObsolete
-  trigger: MonthEnd
+      value: player.hope - 15
+- id: ResubmittedPaperReview
+  trigger: MonthBegin
+  probability: 0.8
   conditions:
   - id: Expression
-    expression: itemCount('idea') > 1
+    expression: itemCount('resubmittedPaper') >= 1
+  actions:
+  - id: CoinFlip
+    probability: calcEffectValue('player.paperAcceptanceBoost') + 0.6
+    success:
+    - id: DisplayMessage
+      message: message.resubmittedPaperAccepted
+      confirm: message.party
+    - id: UpdateItemAmounts
+      updates:
+        resubmittedPaper: -1
+        paper: 1
+    - id: UpdateVariable
+      variable: player.hope
+      value: player.hope + 10
+    fail:
+    - id: DisplayMessage
+      message: message.resubmittedPaperRejected
+      confirm: message.unfortunate
+    - id: UpdateItemAmounts
+      updates:
+        resubmittedPaper: -1
+        majorResult: 1
+    - id: UpdateVariable
+      variable: player.hope
+      value: player.hope - 15
+# progress lost events
+- id: IdeaDoneByOthers
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: itemCount('idea') > 2
   probability: 0.4
   actions:
   - id: DisplayMessage
@@ -191,9 +291,47 @@
   - id: UpdateVariable
     variable: player.hope
     value: player.hope - 5
+- id: FigureInvalid
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: itemCount('figure') >= 2
+  actions:
+  - id: CoinFlip
+    probability: clip(0.1 - itemCount('paper') / 30, 0, 1)
+    success:
+    - id: DisplayMessage
+      message: message.figureInvalid
+      confirm: message.oops
+    - id: GiveItem
+      itemId: figure
+      amount: -1
+    - id: UpdateVariable
+      variable: player.hope
+      value: player.hope - 3
+# random events
+- id: PaperCitation
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: itemCount('paper') >= 1 || itemCount('conferencePaper') >= 1
+  probability: 0.1
+  actions:
+  - id: DisplayMessage
+    message: message.paperCited
+    confirm: message.great
+  - id: UpdateVariable
+    variable: player.hope
+    value: player.hope + 5
+# equipment event
 - id: EquimentBroken
-  trigger: MonthEnd
-  probability: 0.02
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: player.equipmentBroken === 0
+  probability: 0.03
+  exclusions:
+  - EquipmentRepaired
   actions:
   - id: DisplayChoices
     message: message.equipmentBroken
@@ -203,9 +341,10 @@
       - id: DisplayMessage
         message: message.cannotUseEquipment
         confirm: message.ok
-      - id: UpdateVariable
-        variable: player.hope
-        value: player.hope - 2
+      - id: UpdateVariables
+        updates:
+          player.hope: player.hope - 2
+          player.equipmentBroken: 1
     - message: message.fixEquipment
       actions:
       - id: Random
@@ -223,3 +362,18 @@
           - id: DisplayMessage
             message: message.equipmentNotFixed
             confirm: message.unfortunate
+          - id: UpdateVariable
+            variable: player.equipmentBroken
+            value: 1
+- id: EquipmentRepaired
+  trigger: MonthBegin
+  conditions:
+  - id: Expression
+    expression: player.equipmentBroken > 0
+  actions:
+  - id: DisplayMessage
+    message: message.equipmentFixed2
+    confirm: message.finally
+  - id: UpdateVariable
+    variable: player.equipmentBroken
+    value: 0

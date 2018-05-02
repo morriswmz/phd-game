@@ -37,6 +37,7 @@ export class GameEventLoader {
             ? obj['conditions'].map((item: any) => this._conditionFactory.fromJSONObject(item))
             : [];
         const probability = obj['probability'] == undefined ? 1.0 : obj['probability'];
+        if (typeof probability !== 'number') throw new Error('Probability must be a number.');
         const exclusions = Array.isArray(obj['exclusions']) ? obj['exclusions'] : [];
         if (!Array.isArray(obj['actions'])) throw new Error('Missing actions.');
         const actions = obj['actions'].map((item: any) => this._actionFactory.fromJSONObject(item));

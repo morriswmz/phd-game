@@ -1,6 +1,6 @@
-import { GameStateBase, EndGameState } from '../gameState';
-import { GuiGame } from '../gui/guiGame';
-import { EventAction, ActionProxy } from './core';
+import { GameState, EndGameState } from '../gameState';
+import { GuiGameWindow } from '../gui/guiGame';
+import { EventAction, GuiActionProxy } from './core';
 import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventFunctionTableProvider, EventExpressionCompiler } from './expression';
 import { CompiledExpression, compileExpression } from '../utils/expression';
 import { weightedSample } from '../utils/random';
@@ -11,6 +11,11 @@ import { weightedSample } from '../utils/random';
 // Object.prototype.toString.call() is a more foolproof approach.
 
 export type EventActionDeserializer = (obj: any, factory: EventActionFactory, ec: EventExpressionCompiler) => EventAction;
+
+export interface EventActionDeserializerDefinition {
+    ID: string;
+    fromJSONObject: EventActionDeserializer;
+}
 
 /**
  * A factory class for creating event action instances from JSON-like objects.
@@ -24,8 +29,8 @@ export class EventActionFactory {
         this._exprCompiler = exprCompiler;
     }
 
-    registerDeserializer(typeName: string, f: EventActionDeserializer): void {
-        this._deserializers[typeName] = f;
+    registerDeserializer(def: EventActionDeserializerDefinition): void {
+        this._deserializers[def.ID] = def.fromJSONObject;
     }
 
     fromJSONObject(obj: any): EventAction {
@@ -61,14 +66,14 @@ export class EALog extends EventAction {
         this._message = message;
     }
     
-    static Id = 'Log';
+    static ID = 'Log';
     
     static fromJSONObject(obj: any, af: EventActionFactory): EALog {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         return new EALog(obj['message']);
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         return new Promise<void>(resolve => {
             console.log(this._message);
             resolve();
@@ -82,20 +87,20 @@ export class EALog extends EventAction {
  */
 export class EADisplayMessage extends EventAction {
 
-    constructor(private _message: string, private _confirm: string) {
+    constructor(private _message: string, private _confirm: string, private _icon: string) {
         super();
     }
 
-    static Id = 'DisplayMessage';
+    static ID = 'DisplayMessage';
 
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayMessage {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         if (obj['confirm'] == undefined) throw new Error('Confirm message missing.');
-        return new EADisplayMessage(obj['message'], obj['confirm']);
+        return new EADisplayMessage(obj['message'], obj['confirm'], obj['icon'] || '');
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        await ap.displayMessage(this._message, this._confirm);
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+        await ap.displayMessage(this._message, this._confirm, this._icon);
     }
 
 }
@@ -105,21 +110,36 @@ export class EADisplayMessage extends EventAction {
  */
 export class EADisplayRandomMessage extends EventAction {
 
-    constructor(private _messages: string[], private _confirm: string) {
+    constructor(private _messages: string[], private _confirm: string, private _icon: string) {
         super();
     }
 
-    static Id = 'DisplayRandomMessage';
+    static ID = 'DisplayRandomMessage';
 
+    /**
+     * Creates an action that displays a random message from a list of
+     * predefined messages.
+     * @param obj Schema:
+     *  ```
+     *  {
+     *      "id": "DisplayRandomMessage",
+     *      "messages": string[]
+     *      "confirm": string
+     *      "icon": string | undefined
+     *  }
+     *  ```
+     * @param af 
+     * @param ec 
+     */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayRandomMessage {
         if (!Array.isArray(obj['messages'])) throw new Error('Messages missing.');
         if (typeof obj['confirm'] !== 'string') throw new Error('Confirm message missing.');
-        return new EADisplayRandomMessage(obj['messages'], obj['confirm']);
+        return new EADisplayRandomMessage(obj['messages'], obj['confirm'], obj['icon'] || '');
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         const msgId = Math.floor(Math.random() * this._messages.length);
-        await ap.displayMessage(this._messages[msgId], this._confirm);
+        await ap.displayMessage(this._messages[msgId], this._confirm, this._icon);
     }
 
 }
@@ -131,7 +151,7 @@ export class EADisplayChoices extends EventAction {
 
     constructor(private _message: string, private _choiceMessages: string[],
                 private _requirements: CompiledEventExpression[],
-                private _actions: EventAction[][])
+                private _actions: EventAction[][], private _icon: string)
     {
         super();
         if (_choiceMessages.length !== _requirements.length || _choiceMessages.length !== _actions.length) {
@@ -139,7 +159,7 @@ export class EADisplayChoices extends EventAction {
         }
     }
 
-    static Id = 'DisplayChoices';
+    static ID = 'DisplayChoices';
     
     /**
      * Creates an action that prompts multiple choices.
@@ -179,10 +199,10 @@ export class EADisplayChoices extends EventAction {
                 requirements.push(ec.compile('true'));
             }
         }
-        return new EADisplayChoices(obj['message'], choiceMessages, requirements, actions);
+        return new EADisplayChoices(obj['message'], choiceMessages, requirements, actions, obj['icon'] || '');
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         // Build choice array according to requirements.
         let choices: Array<[string, number]> = [];
         for (let i = 0;i < this._choiceMessages.length;i++) {
@@ -190,10 +210,10 @@ export class EADisplayChoices extends EventAction {
                 choices.push([this._choiceMessages[i], i]);
             }
         }
-        let choiceId = await ap.displayChoices(this._message, choices);
+        let choiceId = await ap.displayChoices(this._message, choices, this._icon);
         let actions = this._actions[choiceId];
         for (let a of actions) {
-            await a.execute(ap, ee);
+            await a.execute(gs, ap, ee);
         }
     }
 
@@ -216,7 +236,7 @@ export class EARandom extends EventAction {
         this._weightExprs = weightExprs
     }
 
-    static Id = 'Random';
+    static ID = 'Random';
     
     /**
      * Creates a action that randomly executes one of the action groups.
@@ -252,10 +272,10 @@ export class EARandom extends EventAction {
         return new EARandom(actions, weightExprs);
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         let idx = weightedSample(this._weightExprs.map(item => ee.eval(item)));
         for (let a of this._actions[idx]) {
-            await a.execute(ap, ee);
+            await a.execute(gs, ap, ee);
         }
     }
 
@@ -273,7 +293,7 @@ export class EACoinFlip extends EventAction {
         super();
     }
 
-    static Id = 'CoinFlip';
+    static ID = 'CoinFlip';
 
     /**
      * Creates an action that executes one of the two action groups via a coin
@@ -300,17 +320,17 @@ export class EACoinFlip extends EventAction {
         return new EACoinFlip(ec.compile(p), successActions, failActions);
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         let p = ee.eval(this._p);
         if (p < 0) p = 0;
         let coinFlip = Math.random();
         if (coinFlip < p) {
             for (let a of this._successActions) {
-                await a.execute(ap, ee);
+                await a.execute(gs, ap, ee);
             }
         } else {
             for (let a of this._failActions) {
-                await a.execute(ap, ee);
+                await a.execute(gs, ap, ee);
             }
         }
     }
@@ -326,11 +346,11 @@ export class EAUpdateVariable extends EventAction {
         super();
     }
 
-    static Id = 'UpdateVariable';
+    static ID = 'UpdateVariable';
     
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariable {
         if (!obj['variable']) throw new Error('Missing variable name.');
-        if (!obj['value']) throw new Error('Missing value.');
+        if (obj['value'] == undefined) throw new Error('Missing value.');
         let expr = obj['value'];
         if (typeof expr !== 'number' && typeof expr !== 'string') {
             throw new Error('Value must be either a number of a string.');
@@ -338,9 +358,51 @@ export class EAUpdateVariable extends EventAction {
         return new EAUpdateVariable(obj['variable'], ec.compile(expr));
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         // Check operation
-        ap.gameState.setVar(this._varName, ee.eval(this._updateExpr), false);
+        gs.setVar(this._varName, ee.eval(this._updateExpr), false);
+    }
+
+}
+
+export class EAUpdateVariables extends EventAction {
+
+    constructor(private _varNames: string[], private _updateExprs: CompiledEventExpression[]) {
+        super();
+        if (_varNames.length !== _updateExprs.length) {
+            throw new Error('The number of variables must be equal to the number of expressions.');
+        }
+    }
+
+    static ID = 'UpdateVariables';
+
+    /**
+     * Creates an action that updates multiple variables.
+     * @param obj Schema:
+     *  ```
+     *  {
+     *      "id": "UpdateVariables",
+     *      "updates": { [varName: string]: string | number }
+     *  }
+     *  ```
+     * @param af 
+     * @param ec 
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariables {
+        if (!obj['updates']) throw new Error('Missing update definitions.');
+        let varNames: string[] = [];
+        let exprs: CompiledEventExpression[] = [];
+        for (let varName in obj['updates']) {
+            varNames.push(varName);
+            exprs.push(ec.compile(obj['updates'][varName]));
+        }
+        return new EAUpdateVariables(varNames, exprs);
+    }
+
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+        for (let i = 0;i < this._varNames.length;i++) {
+            gs.setVar(this._varNames[i], ee.eval(this._updateExprs[i]));
+        }
     }
 
 }
@@ -351,7 +413,7 @@ export class EAGiveItem extends EventAction {
         super();
     }
 
-    static Id = 'GiveItem';
+    static ID = 'GiveItem';
 
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAGiveItem {
         if (obj['itemId'] == undefined) throw new Error('Missing item id.');
@@ -362,12 +424,12 @@ export class EAGiveItem extends EventAction {
         return new EAGiveItem(obj['itemId'], ec.compile(obj['amount']));
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         let amount = ee.eval(this._amountExpr);
         if (amount > 0) {
-            ap.gameState.playerInventory.add(this._itemId, amount);
+            gs.playerInventory.add(this._itemId, amount);
         } else if (amount < 0) {
-            ap.gameState.playerInventory.remove(this._itemId, -amount);
+            gs.playerInventory.remove(this._itemId, -amount);
         }
     }
 
@@ -385,7 +447,7 @@ export class EAUpdateItemAmounts extends EventAction {
         }
     }
 
-    static Id = 'UpdateItemAmounts';
+    static ID = 'UpdateItemAmounts';
 
     /**
      * Creates an action that updates the amounts of multiple items relatively.
@@ -410,13 +472,13 @@ export class EAUpdateItemAmounts extends EventAction {
         return new EAUpdateItemAmounts(itemIds, updateExprs);
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         for (let i = 0;i < this._itemIds.length;i++) {
             let amount = ee.eval(this._updateExprs[i]);
             if (amount > 0) {
-                ap.gameState.playerInventory.add(this._itemIds[i], amount);
+                gs.playerInventory.add(this._itemIds[i], amount);
             } else if (amount < 0) {
-                ap.gameState.playerInventory.remove(this._itemIds[i], -amount);
+                gs.playerInventory.remove(this._itemIds[i], -amount);
             }
         }
     }
@@ -429,7 +491,7 @@ export class EAEndGame extends EventAction {
         super();
     }
 
-    static Id = 'EndGame';
+    static ID = 'EndGame';
 
     /**
      * Creates an action that ends the game.
@@ -452,9 +514,9 @@ export class EAEndGame extends EventAction {
         return new EAEndGame(obj['message'], obj['confirm'], obj['winning']);
     }
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         await ap.displayMessage(this._message, this._confirm);
-        ap.gameState.endGameState = this._winning ? EndGameState.Winning : EndGameState.Losing;
+        gs.endGameState = this._winning ? EndGameState.Winning : EndGameState.Losing;
     }
 
 }

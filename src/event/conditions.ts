@@ -1,9 +1,14 @@
-import { GameStateBase } from '../gameState';
+import { GameState } from '../gameState';
 import { EventCondition } from './core';
 import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { CompiledExpression, compileExpression } from '../utils/expression';
 
 type EventConditionDeserializer = (obj: any, factory: EventConditionFactory, ec: EventExpressionCompiler) => EventCondition;
+
+export interface EventConditionDeserializerDefinition {
+    ID: string;
+    fromJSONObject: EventConditionDeserializer;
+}
 
 export class EventConditionFactory {
 
@@ -14,8 +19,8 @@ export class EventConditionFactory {
         this._exprCompiler = exprCompiler;
     }
 
-    registerDeserializer(typeName: string, f: EventConditionDeserializer) : void {
-        this._converters[typeName] = f;
+    registerDeserializer(def: EventConditionDeserializerDefinition) : void {
+        this._converters[def.ID] = def.fromJSONObject;
     }
 
     fromJSONObject(obj: any): EventCondition {
@@ -39,7 +44,7 @@ export class ECExpression extends EventCondition {
         super();
     }
 
-    static Id = 'Expression';
+    static ID = 'Expression';
     
     static fromJSONObject(obj: any, cf: EventConditionFactory, ec: EventExpressionCompiler): EventCondition {
         if (obj['expression'] == undefined || typeof obj['expression'] !== 'string') {
@@ -48,7 +53,7 @@ export class ECExpression extends EventCondition {
         return new ECExpression(ec.compile(obj['expression']));
     }
 
-    check(gs: GameStateBase, ee: EventExpressionEvaluator): boolean {
+    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
         return !!ee.eval(this._expression);
     }
 
@@ -58,7 +63,7 @@ export class ECAll extends EventCondition {
     
     private _conditions: EventCondition[] = [];
 
-    check(gs: GameStateBase, ee: EventExpressionEvaluator): boolean {
+    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
         for (let cond of this._conditions) {
             if (!cond.check(gs, ee)) return false; 
         }
@@ -71,7 +76,7 @@ export class EAAny extends EventCondition {
     
     private _conditions: EventCondition[] = [];
 
-    check(gs: GameStateBase, ee: EventExpressionEvaluator): boolean {
+    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
         for (let cond of this._conditions) {
             if (cond.check(gs, ee)) return true;
         }

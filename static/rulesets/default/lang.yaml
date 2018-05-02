@@ -10,8 +10,12 @@ item.figure.description: A nice looking figure.
 item.draftPaper: Draft Paper
 item.submittedPaper: Submitted Paper
 item.submittedPaper.description: A submitted paper, waiting for the judgement from the reviewers.
+item.resubmittedPaper: Resubmitted Paper
+item.resubmittedPaper.description: A resubmitted paper, waiting for another round of the judgement from the reviewers.
 item.paper: Paper
-item.paper.description: A published paper. All of your hard work!
+item.paper.description: A published paper. All your hard work!
+item.rejectedPaper: Rejected Paper
+item.rejectedPaper.description: A rejected, waiting to be rewritten and resubmitted.
 item.confPaper: Conference Paper
 # main events
 message.beginning: Congradulations. You have been admitted as a new PhD student here.
@@ -19,6 +23,7 @@ message.newMonth: A new month begins. What should I do?
 message.readPapers: Let us read some papers.
 message.gainNewIdea: After scratching your head with several papers, you gain a new idea.
 message.workOnIdea: Let us work on developing an idea.
+message.oldIdea: After talking with your advisor about your new idea, your advisor suggested you check an old paper. It turns out that it has been done before. 
 message.gainPrelimResult: You obtain some preliminary results.
 message.ideaNotWorking: It turns out that this idea is not working.
 message.workOnPrelimResult: Let us work on developing a preliminary result.
@@ -30,34 +35,46 @@ message.noFigure: It seems that you need to conduct more experiments.
 message.wrongFigure: The experimental results contradict your results. You need to figure out what went wrong.
 message.workOnPaper: Let us work on a draft paper.
 message.draftPaperComplete: You complete your draft paper and submitted it!
-message.paperAccepted: "We are pleased to inform you that your manuscript has been ACCEPTED for publication."
-message.paperRejected: "Based on the reviewers' comments, I regret to inform you that your manuscript has been rejected for publication."
+message.paperAccepted: "INBOX: We are pleased to inform you that your manuscript has been ACCEPTED for publication."
+message.paperRejected: "INBOX: Based on the reviewers' comments, I regret to inform you that your manuscript has been rejected for publication."
+message.revisePaper: Let us revise and resubmit a paper.
+message.revisionComplete: You finished rewriting this rejected paper and submitted it.
+message.resubmittedPaperAccepted: "INBOX: We are pleased to inform you that your manuscript has been ACCEPTED for publication."
+message.resubmittedPaperRejected: Your resubmitted paper was rejected and you cannot resubmit again. You need to conduct new experiments if you want to write a new paper on this topic.
 message.slackOff: Let us slack off.
 message.caughtSlackOff: Professor caught you slacking off and reminded you of your tasks via various emails.
 message.slackOffSuccess: You feel relaxed.
 message.lostAllHope: You lost all hope and quitted your PhD.
-message.graduated: Congratulations! You finally earned your degree.
-# idea lost event
+message.graduated: Congratulations! You finally earned your PhD degree. You should be proud of yourself, Dr.
+# progress loss related event
 message.ideaDoneByOthers: You found one of your ideas appears in a recently published paper.
+message.goodIdea: Your advisor thinks your new idea sound interesting. You feel encouraged.
+message.figureInvalid: Upon checking your recent experiment results, you noticed that you used wrong parameters and one of your figures becomes invalid. You must redo this experiment.
 # equipment broken event
 message.equipmentBroken: Equipment broken by new students.
 message.doNothing: Let us not do anything.
-message.cannotUseEquipment: You cannot use lab equipments. That sucks.
+message.cannotUseEquipment: You cannot use lab equipment to verify your results next month. That sucks.
 message.fixEquipment: Let us try to fix it.
 message.equipmentFixed: It is working. Praise the magic of engineering.
 message.equipmentNotFixed: You tried to fix it. However, it is still not working.
+message.equipmentFixed2: Tech support arrived and fixed the lab equipment.
 # conference event
 message.conferenceOpportunity: The great international conference of PhD simulation is calling for papers.
 message.submitConfPaper: Submit one of the preliminary results as a conference paper.
 message.noSubmitConfPaper: Let us not bother with this.
 message.confPaperRejected: Your conference paper is rejected by the reviewers.
 message.confPaperAccepted: Your conference paper gets accepted!
+# misc events
+message.paperCited: Your recent paper gets more citations. You feel recognized.
 # confirms
 message.oops: Oops.
 message.great: Great.
 message.ok: Okay.
 message.excited: Excited.
+message.finally: Finally.
+message.shame: That's a shame.
 message.party: Let us have a party to celebrate it.
 message.soundsInteresting: Sounds interesting.
 message.unfortunate: That is unfortunate.
 message.restart: Let us travel back in time and start again.
+message.hopeAccepted: Hope it will be accepted this time.

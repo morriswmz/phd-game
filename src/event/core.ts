@@ -1,34 +1,30 @@
 /**
  * Core definitions for the event system.
  */
-import { GameStateBase } from '../gameState';
+import { GameState } from '../gameState';
 import { EventExpressionEvaluator } from './expression';
 
 /**
- * Delegates the execution of actual actions.
- * An instance of ActionProxy will be passed as an argument in the execute()
+ * Delegates the execution of actual GUI related actions.
+ * An instance will be passed as an argument in the execute()
  * function so each EventAction instance does not need to hold references to 
  * action targets such as the GUI instances.
  * EventAction instances do not need to know the implementation details of
  * the action targets.
  */
-export interface ActionProxy {
-    /**
-     * Provides access to the current game state.
-     */
-    readonly gameState: GameStateBase;
+export interface GuiActionProxy {
     /**
      * Provides the ability to display a message.
      * @param message Message (potentially unlocalized) to be displayed.
      * @param confirm Text (potentially unlocalized) of the confirm button.
      */
-    displayMessage(message: string, confirm: string): Promise<void>;
+    displayMessage(message: string, confirm: string, icon?: string): Promise<void>;
     /**
      * Provides the ability to display a message with multiple choices.
      * @param message Message (potentially unlocalized) to be displayed.
      * @param choices Texts (potentially unlocalized) of choices.
      */
-    displayChoices(message: string, choices: Array<[string, number]>): Promise<number>;
+    displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number>;
 }
 
 /**
@@ -38,7 +34,7 @@ export interface ActionProxy {
  */
 export abstract class EventAction {
 
-    async execute(ap: ActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         throw new Error('Not implemented.');
     }
 
@@ -51,7 +47,7 @@ export abstract class EventAction {
  */
 export abstract class EventCondition {
 
-    check(gs: GameStateBase, ee: EventExpressionEvaluator): boolean {
+    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
         throw new Error('Not implemented.');
     }
 

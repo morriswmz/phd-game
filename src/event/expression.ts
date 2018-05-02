@@ -1,5 +1,5 @@
 import { FunctionTable, ExpressionEvaluator, CompiledExpression, FunctionTableProvider, ExpressionCompiler, compileExpression } from '../utils/expression';
-import { GameStateBase } from '../gameState';
+import { GameState } from '../gameState';
 
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
@@ -25,20 +25,20 @@ export type EventFunctionTableProvider = FunctionTableProvider<EventExpressionFu
 export class EventExpressionEngine implements EventFunctionTableProvider, EventExpressionCompiler, EventExpressionEvaluator {
 
     private _fTable: EventExpressionFunctionTable;
-    private _gameState: GameStateBase;
+    private _gameState: GameState;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(gs: GameStateBase) {
+    constructor(gs: GameState) {
         this._gameState = gs;
         this._fTable = this._initFunctionTable();
     }
 
     private _initFunctionTable(): EventExpressionFunctionTable {
         return {
-            getVar: varName => this._gameState.getVar(varName),
+            getVar: varName => this._gameState.getVar(varName, true),
             eventOccurred: id => this._gameState.occurredEvents[id] != undefined,
             itemCount: id => this._gameState.playerInventory.count(id),
-            totalMonths: () => this._gameState.getVar('year') * 12 + this._gameState.getVar('month'),
+            totalMonths: () => this._gameState.getVar('year', true) * 12 + this._gameState.getVar('month', true),
             calcEffectValue: s => 0,
             random: Math.random,
             max: Math.max,
