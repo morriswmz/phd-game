@@ -2,7 +2,7 @@ import { GameState, EndGameState } from '../gameState';
 import { GuiGameWindow } from '../gui/guiGame';
 import { EventAction, GuiActionProxy } from './core';
 import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventFunctionTableProvider, EventExpressionCompiler } from './expression';
-import { CompiledExpression, compileExpression } from '../utils/expression';
+import { CompiledExpression, compileExpression, ExpressionEvaluator } from '../utils/expression';
 import { weightedSample } from '../utils/random';
 
 // Note on the usage of typeof.
@@ -517,6 +517,43 @@ export class EAEndGame extends EventAction {
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         await ap.displayMessage(this._message, this._confirm);
         gs.endGameState = this._winning ? EndGameState.Winning : EndGameState.Losing;
+    }
+
+}
+
+export class EASetStatus extends EventAction {
+
+    constructor(private _statusId: string, private _on: boolean) {
+        super();
+    }
+
+    static ID = 'SetStatus';
+    
+    /**
+     * Create an action that set a player status (on or off).
+     * @param obj Schema
+     *  ```
+     *  {
+     *      "id": "SetStatus",
+     *      "statusId": string,
+     *      "on": boolean
+     *  }
+     *  ```
+     * @param af 
+     * @param ec 
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASetStatus {
+        if (typeof(obj['statusId']) !== 'string') throw new Error('Missing status id.');
+        if (typeof(obj['on']) !== 'boolean') throw new Error('Missing on/off indicator.');
+        return new EASetStatus(obj['statusId'], obj['on']);
+    }
+
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+        if (this._on) {
+            gs.playerStatus.add(this._statusId);
+        } else {
+            gs.playerStatus.remove(this._statusId);
+        }
     }
 
 }

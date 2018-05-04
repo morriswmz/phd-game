@@ -50,7 +50,7 @@ const regexGroups = [
     },
     {
         tokenType: TokenType.Operator,
-        regex: /^(\+|-|\*|\/|\(|\)|>=|>|<=|<|&&|&|\|\||\||!|:|\?|={2,3}|!={1,2})/
+        regex: /^(\+|-|\*|\/|%|\(|\)|>=|>|<=|<|&&|&|\|\||\||!|:|\?|===|==|!==|!=)/
     },
     {
         tokenType: TokenType.Delimiter,

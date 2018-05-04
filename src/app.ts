@@ -37,6 +37,7 @@ if (container) {
     const app = new App(<HTMLDivElement>container, {
         languageFileUrl: 'rulesets/default/lang.yaml',
         itemDefinitionUrl: 'rulesets/default/items.yaml',
+        statusDefinitionUrl: 'rulesets/default/status.yaml',
         eventDefinitionUrl: 'rulesets/default/events.yaml'
     });
     app.start().then(() => {

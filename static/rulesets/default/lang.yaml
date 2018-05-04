@@ -16,62 +16,99 @@ item.paper: Paper
 item.paper.description: A published paper. All your hard work!
 item.rejectedPaper: Rejected Paper
 item.rejectedPaper.description: A rejected, waiting to be rewritten and resubmitted.
-item.confPaper: Conference Paper
+item.conferencePaper: Conference Paper
+item.conferencePaper.description: A conference paper.
+item.submittedConfPaper: Submitted Conference Paper
+item.submittedConfPaper.description: A submitted conference paper, waiting for the judgement from the reviewers.
+
+status.firstYear: First Year Excitement
+status.firstYear.description: Restores hope every month.
+status.brokenEquipment: Broken Equipment.
+status.brokenEquipment.description: Cannot conduct experiments this month.
+status.callForPapers: Call for Papers
+status.callForPapers.description: You can submit a conference paper once you have a major result.
+status.upgradedEquipment: Upgraded Equipment
+status.upgradedEquipment.description: Slightly increases the chance of getting nice figures.
+# qualify
+message.qualifyNotice: "NOTICE: All PhD students must pass the **qualifying exam in December**. ProTip: spend at least four months preparing for it."
+message.prepareQualify: Prepare for the qualifying exam.
+message.qualifyLevelUp: You felt more confident in passing the qualifying exam.
+message.qualifyPassed: You **PASSED** the qualifying exam.
+message.qualifyFailed: You **FAILED** the qualifying exam.
 # main events
-message.beginning: Congradulations. You have been admitted as a new PhD student here.
-message.newMonth: A new month begins. What should I do?
-message.readPapers: Let us read some papers.
-message.gainNewIdea: After scratching your head with several papers, you gain a new idea.
-message.workOnIdea: Let us work on developing an idea.
+message.beginning: Congratulations. You have been admitted as a new PhD student here. You are required to publish at least **3 journal papers** to qualify your degree.
+message.newMonth: A new month begins.
+message.readPapers: Read some papers.
+message.gainNewIdea1: After digging into piles of papers, you suddenly gained a **new idea**.
+message.gainNewIdea2: After scratching your head for countless hours, you came up with a **new idea**.
+message.workOnIdea: Work on developing an idea.
 message.oldIdea: After talking with your advisor about your new idea, your advisor suggested you check an old paper. It turns out that it has been done before. 
-message.gainPrelimResult: You obtain some preliminary results.
-message.ideaNotWorking: It turns out that this idea is not working.
-message.workOnPrelimResult: Let us work on developing a preliminary result.
-message.gainMajorResult: You develop a major result.
-message.noMajorResult: It seems that you need more time to further develop this preliminary result.
-message.workOnFigure: Let us conduct some experiments to verify our major results.
-message.gainFigure: The experiments went very well. You gain a nice figure.
-message.noFigure: It seems that you need to conduct more experiments.
-message.wrongFigure: The experimental results contradict your results. You need to figure out what went wrong.
-message.workOnPaper: Let us work on a draft paper.
+message.gainPrelimResult: Your idea is working! You obtained some a **preliminary result**.
+message.ideaNotWorking: It turned out that this idea is not working. Time to try another one.
+message.workOnPrelimResult: Work on developing a preliminary result.
+message.gainMajorResult: You developed a **major result**.
+message.noMajorResult: You are quite certain that you will get some interesting results. However, you need more time to find the missing piece.
+message.workOnFigure: Conduct experiments to support a major result.
+message.gainFigure: The experiments went very well. You gained a nice **figure**.
+message.noFigure1: You did not get any interesting results from the current setup. It seems that you need to conduct more experiments.
+message.noFigure2: The computer crashed when processing the data. It seems that you need to redo the experiments.
+message.wrongFigure: You obtained some contradicting results. Something went wrong and you must revisit your derivations.
+message.workOnPaper: Work on a draft paper.
 message.draftPaperComplete: You complete your draft paper and submitted it!
-message.paperAccepted: "INBOX: We are pleased to inform you that your manuscript has been ACCEPTED for publication."
-message.paperRejected: "INBOX: Based on the reviewers' comments, I regret to inform you that your manuscript has been rejected for publication."
-message.revisePaper: Let us revise and resubmit a paper.
-message.revisionComplete: You finished rewriting this rejected paper and submitted it.
-message.resubmittedPaperAccepted: "INBOX: We are pleased to inform you that your manuscript has been ACCEPTED for publication."
-message.resubmittedPaperRejected: Your resubmitted paper was rejected and you cannot resubmit again. You need to conduct new experiments if you want to write a new paper on this topic.
-message.slackOff: Let us slack off.
-message.caughtSlackOff: Professor caught you slacking off and reminded you of your tasks via various emails.
-message.slackOffSuccess: You feel relaxed.
-message.lostAllHope: You lost all hope and quitted your PhD.
-message.graduated: Congratulations! You finally earned your PhD degree. You should be proud of yourself, Dr.
+message.paperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
+message.paperRejected: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication."
+message.revisePaper: Revise and resubmit a rejected paper.
+message.revisionComplete: Following the reviewers' comments, you finished rewriting this rejected paper and submitted it.
+message.resubmittedPaperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
+message.resubmittedPaperRejected: "INBOX: We regret to inform you that your manuscript has been **REJECTED** for publication."
+message.slackOff: Slack off.
+message.caughtSlackOff1: Your advisor caught you slacking off and reminded you of your tasks via various emails.
+message.caughtSlackOff2: Your advisor made a phone call to the lab and found out that your were not in the lab. You received an email reminding you of your research progress.
+message.slackOffSuccess: You relaxed for a while and regained some hope.
+message.lostAllHope: You lost all hope and **quitted your PhD**.
+message.graduated: Congratulations! You finally **earned your PhD degree**. You should be proud of yourself, Dr.
 # progress loss related event
-message.ideaDoneByOthers: You found one of your ideas appears in a recently published paper.
-message.goodIdea: Your advisor thinks your new idea sound interesting. You feel encouraged.
+message.ideaDoneByOthers: You found one of your ideas appears in a recently published paper. You can no longer work on it.
+message.prelimDoneByOthers: You found one of your preliminary results appears in a recently published paper. You can no longer work on it.
+message.goodIdea: Your advisor thinks your new idea sounds interesting. You feel encouraged.
 message.figureInvalid: Upon checking your recent experiment results, you noticed that you used wrong parameters and one of your figures becomes invalid. You must redo this experiment.
-# equipment broken event
-message.equipmentBroken: Equipment broken by new students.
-message.doNothing: Let us not do anything.
+# equipment event
+message.equipmentBroken: Lab equipment broken by new students.
+message.doNothing: Do nothing.
 message.cannotUseEquipment: You cannot use lab equipment to verify your results next month. That sucks.
-message.fixEquipment: Let us try to fix it.
+message.fixEquipment: Try to fix it.
 message.equipmentFixed: It is working. Praise the magic of engineering.
 message.equipmentNotFixed: You tried to fix it. However, it is still not working.
 message.equipmentFixed2: Tech support arrived and fixed the lab equipment.
+message.newEquipment: Your advisor **upgraded the old lab equipment**. Everyone was excited.
 # conference event
-message.conferenceOpportunity: The great international conference of PhD simulation is calling for papers.
-message.submitConfPaper: Submit one of the preliminary results as a conference paper.
-message.noSubmitConfPaper: Let us not bother with this.
-message.confPaperRejected: Your conference paper is rejected by the reviewers.
-message.confPaperAccepted: Your conference paper gets accepted!
+message.callForPapers: The great international conference on PhD simulation (ICPS) is calling for papers. Submission is open for the following 6 months. If you have any major result, you can submit.
+message.workOnConf: Work on a conference paper.
+message.finishedConfPaper: You finished the conference paper and submitted it!
+message.confPaperRejected: Your submission to ICPS{{year}} was **REJECTED**. The reviewers were not convinced of the significance your results. Nevertheless, you can continue to work on these results.
+message.confPaperAccepted1: "INBOX: Congratulations on the **ACCEPTANCE** of this nice work as an poster paper in ICPS{{year}}."
+message.confPaperAccepted2: "INBOX: Congratulations on the **ACCEPTANCE** of this nice work as an oral paper in ICPS{{year}}."
+message.attendConf: You attended ICPS{{year}} and met researchers from all over the world. It was a great experience. The food was good, too.
+message.confNewIdea: You came up with a new idea while discussing with other researchers during the conference.
 # misc events
-message.paperCited: Your recent paper gets more citations. You feel recognized.
+message.paperCited: Your recent paper got more citations. You feel recognized.
+message.seminar1: You attended a seminar related to your research this month. The speaker's slides were very inspiring and you gained a new idea.
+message.seminar2: A distinguished lecturer gave a inspiring talk in this week's seminar. You suddenly came up with a new idea.
+message.showerIdea: You found the missing piece during a shower. You develop one of your preliminary results into a **major result**.
+message.randomHope1: The city museum is hosting a special exhibition this month. You paid a visit and it was a great experience. You feel relieved.
+message.randomHope2: There was an open concert near the campus. You spent some time enjoying the music and felt relieved.
+message.randomHope3: You had a party with your labmates. The food was great and you felt relieved.
+message.randomHope4: A new restaurant opened near your apartment. You paid a visit and the food was great. You felt much better.
+message.randomHope5: An item in your shopping cart was on sale. You instantly bought it and felt much better.
 # confirms
 message.oops: Oops.
 message.great: Great.
+message.cool: Cool.
 message.ok: Okay.
 message.excited: Excited.
 message.finally: Finally.
+message.hope: Hope so.
+message.encouraging: That is encouraging.
 message.shame: That's a shame.
 message.party: Let us have a party to celebrate it.
 message.soundsInteresting: Sounds interesting.

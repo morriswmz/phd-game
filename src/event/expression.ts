@@ -14,7 +14,8 @@ export interface EventExpressionFunctionTable extends FunctionTable {
     eventOccurred(id: string): boolean;
     itemCount(id: string): number;
     totalMonths(): number;
-    calcEffectValue(id: string): number;
+    hasStatus(id: string): boolean;
+    calcEffectValue(id: string, base: number): number;
 }
 
 export type CompiledEventExpression = CompiledExpression<EventExpressionFunctionTable>;
@@ -39,7 +40,12 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
             eventOccurred: id => this._gameState.occurredEvents[id] != undefined,
             itemCount: id => this._gameState.playerInventory.count(id),
             totalMonths: () => this._gameState.getVar('year', true) * 12 + this._gameState.getVar('month', true),
-            calcEffectValue: s => 0,
+            calcEffectValue: (id, base) => {
+                const eItem = this._gameState.playerInventory.calcCombinedEffectValue(id);
+                const eStatus = this._gameState.playerStatus.calcCombinedEffectValue(id);
+                return (base + eItem[0] + eStatus[0]) * eItem[1] * eStatus[1];
+            },
+            hasStatus: id => this._gameState.playerStatus.count(id) > 0,
             random: Math.random,
             max: Math.max,
             min: Math.min,
@@ -72,7 +78,9 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
     }
 
     eval(expr: CompiledExpression<EventExpressionFunctionTable>): number {
-        return expr.fn(this.getClosure());
+        let val = expr.fn(this.getClosure());
+        if (isNaN(val)) throw new Error('Expression produced NaN.');
+        return val;
     }
 
 }

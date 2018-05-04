@@ -4,11 +4,13 @@ import { isVariableName } from '../utils/expression';
 
 const TextStyles = {
     Underline: 1,
-    Emphasize: 2
+    Emphasize: 2,
+    Strong: 4
 };
 
 const TextStyleMarkupMap: { [key: string]: [number, string, string]; } = {
     '*': [TextStyles.Emphasize, '<em>', '</em>'],
+    '#': [TextStyles.Strong, '<strong>', '</strong>'],
     '_': [TextStyles.Underline, '<span style="text-decoration: underline">', '</span>']
 };
 
@@ -19,6 +21,7 @@ const TextStyleMarkupMap: { [key: string]: [number, string, string]; } = {
  * - {{varName:ndigits}} variable interpolation, number of digits is optional.
  * - __text__ underline
  * - **text** emphasize
+ * - ##text## strong
  * For example, if player.hope is 50, then "Hope: <**{{player.hope}}**>" will be
  * converted to "Hope: &lt;<em>50</em>&gt;".
  * @param s Original string to be rendered.
@@ -28,7 +31,7 @@ const TextStyleMarkupMap: { [key: string]: [number, string, string]; } = {
 export function renderText(s: string, ldict: LocalizationDictionary, gs: GameState): string {
     s = ldict.translate(s);
     // Step 1: interpolate
-    s.replace(/\{\{([a-z0-9$_.]+)(:\d+)?\}\}/gi, (match, p1, p2) => {
+    s = s.replace(/\{\{([a-z0-9$_.]+)(:\d+)?\}\}/gi, (match, p1, p2) => {
         if (isVariableName(p1)) {
             let val = gs.getVar(p1, false);
             if (val == undefined) {

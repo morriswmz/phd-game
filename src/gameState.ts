@@ -1,5 +1,6 @@
 import { JSONSerializable } from './utils/jsonSerializable';
-import { Inventory } from './effect/item';
+import { Inventory, ItemRegistry } from './effect/item';
+import { StatusTable, StatusRegistry } from './effect/status';
 
 export enum EndGameState {
     None,
@@ -30,6 +31,7 @@ export class GameState {
 
     private _occurredEvents: { [key: string]: number; } = {};
     private _playerInventory: Inventory;
+    private _playerStatus: StatusTable;
     private _variables: { [key: string]: number } = {};
     private _varLimits: { [key: string]: [number, number] } = {};
 
@@ -38,12 +40,17 @@ export class GameState {
     // event handlers
     onVariableChanged: VariableChangeHandler | undefined;
 
-    constructor(inventory: Inventory) {
-        this._playerInventory = inventory;
+    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry) {
+        this._playerInventory = new Inventory(itemRegistry);
+        this._playerStatus = new StatusTable(statusRegistry);
     }
 
     get playerInventory(): Inventory {
         return this._playerInventory;
+    }
+
+    get playerStatus(): StatusTable {
+        return this._playerStatus;
     }
 
     get occurredEvents(): { [key: string]: number; } {
@@ -112,6 +119,7 @@ export class GameState {
 
     reset(): void {
         this.playerInventory.clear();
+        this.playerStatus.clear();
         this._occurredEvents = {};
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));

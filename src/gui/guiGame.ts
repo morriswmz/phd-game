@@ -3,6 +3,7 @@ import { GameState, VariableChangedEvent } from '../gameState';
 import { Inventory, Item } from '../effect/item';
 import { EffectProviderCollectionChangedEvent } from '../effect/effect';
 import { renderText } from './textRenderer';
+import { StatusTable, Status } from '../effect/status';
 
 export interface GuiGame {
 
@@ -32,8 +33,11 @@ export class GuiGameWindow implements GuiGame {
             this.handleVariableUpdate(gs, e);
         };
         this._gameState.playerInventory.onChanged = (inv, e) => {
-            this.updateItemList(inv, e);
+            this.updateItemList(<Inventory>inv, e);
         };
+        this._gameState.playerStatus.onChanged = (sTable, e) => {
+            this.updateStatusList(<StatusTable>sTable, e);
+        }
     }
 
     retrieveElement<T extends HTMLElement>(id: string): T {
@@ -70,13 +74,33 @@ export class GuiGameWindow implements GuiGame {
         for (const itemId in inv.items) {
             let node = document.createElement('li');
             let item = inv.items[itemId];
-            if (item[0].rarity > 5) node.className = 'r_rare';
+            if (item[0].rarity >= 10) {
+                node.className = 'r_legendary';
+            } else if (item[0].rarity >= 6) {
+                node.className = 'r_rare';
+            } else if (item[0].rarity >= 3) {
+                node.className = 'r_uncommon';
+            }
             node.textContent = this._ldict.translate(item[0].unlocalizedName) + ' x' + item[1].toString();
             node.title = this._ldict.translate(item[0].unlocalizedDescription);
             this._itemsContainer.appendChild(node);
         }
     }
-    
+
+    updateStatusList(statusTable: StatusTable, e: EffectProviderCollectionChangedEvent<Status>): void {
+        while (this._statusContainer.lastChild) {
+            this._statusContainer.removeChild(this._statusContainer.lastChild);
+        }
+        if (e.clear) return;
+        for (const itemId in statusTable.items) {
+            let node = document.createElement('li');
+            let status = statusTable.items[itemId];
+            node.textContent = this._ldict.translate(status[0].unlocalizedName);
+            node.title = this._ldict.translate(status[0].unlocalizedDescription);
+            this._statusContainer.appendChild(node);
+        }
+    }
+
     displayMessage(message: string, confirm: string, icon?: string): Promise<void> {
         return new Promise<void>(resolve => {
             this.updateMessage(message, icon);

@@ -1,0 +1,18 @@
+---
+status:
+  - id: firstYear
+    duration: 12
+    effects:
+      player.hopeBoost:
+        relative: false
+        amount: 1
+  - id: callForPapers
+    duration: 6
+  - id: brokenEquipment
+    duration: 1
+  - id: upgradedEquipment
+    duration: Infinity
+    effects:
+      player.experimentBoost:
+        relative: false
+        amount: 0.2

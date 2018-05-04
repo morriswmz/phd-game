@@ -1,17 +1,45 @@
 import { Item } from "./item";
 
-export enum ModifierType {
-    Absolute,
-    Relative,
-    Assignment
-}
-
 export interface Modifier {
-    readonly type: ModifierType;
+    readonly relative: boolean;
     readonly amount: number;
 }
 
 export type EffectCollection = { [effectId: string]: Modifier; };
+
+/**
+ * Loads a effect collection.
+ * @param obj Schema:
+ *  ```
+ *  {
+ *      string: {
+ *          "relative": boolean
+ *          "amount": number
+ *      }
+ *  }
+ *  ```
+ */
+export function loadEffectCollectionFromJSON(obj: any): EffectCollection {
+    let result: EffectCollection = {};
+    for (const key in obj) {
+        if (obj[key]) {
+            if (result[key]) {
+                throw new Error(`Duplicate definition for "${key}".`);
+            }
+            if (typeof(obj[key]['relative']) !== 'boolean') {
+                throw new Error('Missing relative/absolute definition.');
+            }
+            if (typeof(obj[key]['amount']) !== 'number') {
+                throw new Error('Missing amount.');
+            }
+            result[key] = {
+                relative: obj[key]['relative'],
+                amount: obj[key]['amount']
+            };
+        }
+    }
+    return result;
+}
 
 /**
  * An effect provider can be an item, or a player status.
@@ -96,14 +124,14 @@ export class EffectProviderCollection<T extends EffectProvider> {
     }
 
     /**
-     * Gets an readonly view of all the effect providers.
+     * Gets a readonly view of all the effect providers.
      */
     get items(): { readonly [id: string]: Readonly<[T, number]>; } {
         return this._items;
     }
 
     /**
-     * Adds an new effect provider.
+     * Adds a new effect provider.
      * @param item
      * @param count
      */
@@ -156,20 +184,20 @@ export class EffectProviderCollection<T extends EffectProvider> {
 
     /**
      * Calculates the combined effect value by considering all the effect
-     * providers in this collection. For instance, if two effect providers in
+     * providers in this collection. For instance, if three effect providers in
      * this collection have effects
-     * {'player.hopeBoost', Modifiers.Absolute, 1.0} and 
-     * {'player.hopeBoost', Modifiers.Absolute, 1.5}, respectively,
-     * then this function will return 2.5 for the input 'player.hopeBoost'.
-     * Equation for calculating the final value
-     *  a = sum of modifier amounts with type `Absolute`
-     *  m = multiplication of modifier (1.0 + amounts) with type `Relative`
-     *  final value = a * b
-     *  * If any modifier has the type `Assignment`, this modifier's amount will
-     *    be returned immediately.
+     * {'player.hopeBoost', false, 1.0},
+     * {'player.hopeBoost', true, 0.2} 
+     * {'player.hopeBoost', false, 1.5}, respectively,
+     * then this function will return [2.5, 0.2] for the input
+     * 'player.hopeBoost'.
+     * Equation for calculating the values
+     *  a = sum of absolute modifier values
+     *  m = multiplication of (1.0 + amounts) for relative values
+     * Returns [a, m]
      * @param effectId Id of the effect.
      */
-    calcCombinedEffectValue(effectId: string): number {
+    calcCombinedEffectValue(effectId: string): [number, number] {
         let a = 0;
         let m = 1;
         for (let id in this._items) {
@@ -177,21 +205,14 @@ export class EffectProviderCollection<T extends EffectProvider> {
             let curEffects = curItem[0].getEffects();
             if (effectId in curEffects) {
                 let modifier = curEffects[effectId];
-                switch (modifier.type) {
-                    case ModifierType.Absolute:
-                        a += modifier.amount * curItem[1];
-                        break;
-                    case ModifierType.Relative:
-                        m += Math.pow(modifier.amount + 1, curItem[1]);
-                        break;
-                    case ModifierType.Assignment:
-                        return modifier.amount;
-                    default:
-                        throw new Error(`Unknown modifier type: ${modifier.type}.`);
-                } 
+                if (modifier.relative) {
+                    m += Math.pow(modifier.amount + 1, curItem[1]);
+                } else {
+                    a += modifier.amount * curItem[1];
+                }
             }
         }
-        return a * m;
+        return [a, m];
     }
 
     protected dispatchChangeEvent(event: EffectProviderCollectionChangedEvent<T>): void {

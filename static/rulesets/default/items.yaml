@@ -11,10 +11,12 @@ items:
   - id: paper
     rarity: 10
   - id: submittedPaper
-    rarity: 5
+    rarity: 6
   - id: resubmittedPaper
-    rarity: 5
+    rarity: 6
   - id: rejectedPaper
-    rarity: 5
+    rarity: 6
   - id: conferencePaper
+    rarity: 6
+  - id: submittedConfPaper
     rarity: 5

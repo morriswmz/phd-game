@@ -6,6 +6,7 @@ body {
     font-size: 14px;
     font-family: 'Press Start 2P', cursive, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Microsoft YaHei';
     background: linear-gradient(#87ceeb, #00bfff) no-repeat;
+    line-height: 110%;
 }
 a, a:hover, a:active, a:link {
     text-decoration: none;
@@ -42,6 +43,12 @@ a, a:hover, a:active, a:link {
     min-height: 240px;
     text-align: center
 }
+#message_window em {
+    color: #b50000;
+    font-style: normal;
+    animation: emphasis 0.5s ease-in-out infinite;
+    backface-visibility: hidden;
+}
 #choices_container a {
     display: block;
     padding: 0.4em;
@@ -65,10 +72,18 @@ a, a:hover, a:active, a:link {
 #choices_container a:nth-child(6) { animation-delay: 0.10s; }
 #choices_container a:nth-child(7) { animation-delay: 0.12s; }
 #choices_container a:nth-child(8) { animation-delay: 0.14s; }
+#choices_container a:nth-child(9) { animation-delay: 0.16s; }
+#choices_container a:nth-child(10) { animation-delay: 0.18s; }
 
 .r_common {}
+.r_uncommon {
+    color: #008a00;
+}
 .r_rare {
     color: #8b008b;
+}
+.r_legendary {
+    color: #ec9000;
 }
 
 footer {
@@ -93,6 +108,9 @@ footer a:link {
 @keyframes shake {
     10%, 30% {transform: translate(0, 2px)}
     20%, 40% {transform: translate(0, -2px)}
+}
+@keyframes emphasis {
+    50% {color: rgb(255, 100, 100)}
 }
 
 @media screen and (max-width: 720px) {

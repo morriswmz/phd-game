@@ -1,10 +1,13 @@
-import { EffectProvider, EffectProviderCollection, Modifier, EffectProviderRegistry, EffectCollection } from './effect';
+import { EffectProvider, EffectProviderCollection, Modifier, EffectProviderRegistry, EffectCollection, loadEffectCollectionFromJSON } from './effect';
 import { downloadAndParse } from '../utils/network';
 import { safeLoad } from 'js-yaml';
 
 export class Item implements EffectProvider {
 
-    constructor(private _id: string, private _rarity: number, private _effects: EffectCollection = {}) {
+    constructor(private _id: string, private _rarity: number,
+                private _icon: string = '',
+                private _effects: EffectCollection = {})
+    {
 
     }
 
@@ -22,6 +25,10 @@ export class Item implements EffectProvider {
 
     get rarity(): number {
         return this._rarity;
+    }
+
+    get icon(): string {
+        return this._icon;
     }
 
     getEffects(): EffectCollection {
@@ -45,22 +52,17 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
             }
             let effects: EffectCollection;
             if (itemDef['effects'] != undefined) {
-                effects = this.loadEffects(itemDef['effects']);
+                effects = loadEffectCollectionFromJSON(itemDef['effects']);
             } else {
                 effects = {};
             }
             let rarity = typeof itemDef['rarity'] === 'number' ? itemDef['rarity'] : 0;
-            this.add(new Item(itemDef['id'], rarity, effects));
+            let icon = typeof itemDef['icon'] === 'string' ? itemDef['icon'] : 0;
+            this.add(new Item(itemDef['id'], rarity, icon, effects));
         }
     }
 
-    loadEffects(obj: any): EffectCollection {
-        throw new Error('Not implemented.');
-    }
-
 }
-
-type InventoryChangeHandler = (inv: Inventory, item: Item, newAmount: number, oldAmount: number) => void;
 
 export class Inventory extends EffectProviderCollection<Item> {
     

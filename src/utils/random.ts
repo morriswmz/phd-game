@@ -14,7 +14,7 @@ export function weightedSample(w: ArrayLike<number>): number {
     }
     cw[cw.length - 1] = sum;
     if (sum === 0) throw new Error('Sum of weights must be positive.');
-    let p = Math.random();
+    let p = Math.random() * sum;
     // Should use binary search here!
     let idx = 0;
     for (;idx < w.length;idx++) {
