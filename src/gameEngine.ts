@@ -67,7 +67,7 @@ export class GameEngine {
         this._initFactories();
         await this._itemRegistry.loadItems(this._config.itemDefinitionUrl);
         await this._statusRegistry.loadStatus(this._config.statusDefinitionUrl);
-        const eventLoader = new GameEventLoader(this._conditionFactory, this._actionFactory);
+        const eventLoader = new GameEventLoader(this._expressionEngine, this._conditionFactory, this._actionFactory);
         const events = await eventLoader.load(this._config.eventDefinitionUrl);
         this._eventEngine.registerEvents(events);
         this._dataLoaded = true;

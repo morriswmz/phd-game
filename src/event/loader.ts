@@ -3,13 +3,16 @@ import { EventActionFactory } from './actions';
 import { GameEvent } from './core';
 import { downloadAndParse } from '../utils/network';
 import { safeLoad } from 'js-yaml';
+import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 
 export class GameEventLoader {
 
+    private _exprCompiler: EventExpressionCompiler;
     private _conditionFactory: EventConditionFactory;
     private _actionFactory: EventActionFactory;
 
-    constructor(cf: EventConditionFactory, af: EventActionFactory) {
+    constructor(ec: EventExpressionCompiler, cf: EventConditionFactory, af: EventActionFactory) {
+        this._exprCompiler = ec;
         this._conditionFactory = cf;
         this._actionFactory = af;
     }
@@ -36,8 +39,18 @@ export class GameEventLoader {
         const conditions = Array.isArray(obj['conditions'])
             ? obj['conditions'].map((item: any) => this._conditionFactory.fromJSONObject(item))
             : [];
-        const probability = obj['probability'] == undefined ? 1.0 : obj['probability'];
-        if (typeof probability !== 'number') throw new Error('Probability must be a number.');
+        let probability: number | CompiledEventExpression;
+        if (obj['probability'] == undefined) {
+            probability = 1.0;
+        } else {
+            if (typeof obj['probability'] === 'number') {
+                probability = obj['probability'];
+            } else if (typeof obj['probability'] === 'string') {
+                probability = this._exprCompiler.compile(obj['probability']);
+            } else {
+                throw new Error('Probability must either a number or a string expression.');
+            }
+        }
         const exclusions = Array.isArray(obj['exclusions']) ? obj['exclusions'] : [];
         if (!Array.isArray(obj['actions'])) throw new Error('Missing actions.');
         const actions = obj['actions'].map((item: any) => this._actionFactory.fromJSONObject(item));

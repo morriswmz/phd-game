@@ -2,7 +2,7 @@
  * Core definitions for the event system.
  */
 import { GameState } from '../gameState';
-import { EventExpressionEvaluator } from './expression';
+import { EventExpressionEvaluator, CompiledEventExpression } from './expression';
 
 /**
  * Delegates the execution of actual GUI related actions.
@@ -63,7 +63,7 @@ export class GameEvent {
     constructor(private _id: string, private _trigger: string,
                 private _conditions: EventCondition[] = [],
                 private _actions: EventAction[] = [],
-                private _probability: number = 1.0,
+                private _probability: number | CompiledEventExpression = 1.0,
                 private _exclusions: string[] = [],
                 private _once: boolean = false)
     {
@@ -95,7 +95,7 @@ export class GameEvent {
     /**
      * Probability of executing the actions if all conditions are meet.
      */
-    get probability(): number {
+    get probability(): number | CompiledEventExpression {
         return this._probability;
     }
     /**
