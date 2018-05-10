@@ -18,7 +18,7 @@ class App {
         this._ldict = new LocalizationDictionary();
         const ap = new GameActionProxy();
         this._gameEngine = new GameEngine(config, ap);             
-        this._gui = new GuiGameWindow(container, this._ldict, this._gameEngine.gameState);
+        this._gui = new GuiGameWindow(container, this._ldict, this._gameEngine);
         ap.attachGui(this._gui);       
     }
 

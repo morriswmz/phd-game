@@ -107,6 +107,10 @@
   - id: SetStatus
     statusId: upgradedEquipment
     on: true
+  # the upgrade also fixes broken equipment
+  - id: SetStatus
+    statusId: brokenEquipment
+    on: false
 # qualify
 - id: Qualify
   trigger: MonthBegin
@@ -170,8 +174,12 @@
             updates:
               player.hope: player.hope + 2
         fail:
-        - id: DisplayMessage
-          message: message.oldIdea
+        - id: DisplayRandomMessage
+          messages:
+          - message.oldIdea1
+          - message.oldIdea2
+          - message.oldIdea3
+          - message.oldIdea4
           confirm: message.oops
         - id: UpdateVariable
           variable: player.hope
@@ -395,7 +403,7 @@
   conditions:
   - id: Expression
     expression: itemCount('idea') >= 1
-  probability: 0.07
+  probability: max(0.01, 0.07 - itemCount('conferencePaper') / 50)
   actions:
   - id: DisplayMessage
     message: message.ideaDoneByOthers

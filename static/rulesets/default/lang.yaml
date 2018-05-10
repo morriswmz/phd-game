@@ -2,28 +2,27 @@
 item.idea: Idea
 item.idea.description: A simple idea to be developed to a minor result.
 item.preliminaryResult: Preliminary Result
-item.preliminaryResult.description: Some preliminary findings.
+item.preliminaryResult.description: Some preliminary findings. Can be potentially developed into a major result.
 item.majorResult: Major Result
-item.majorResult.description: Some major findings. Enough for a new paper.
+item.majorResult.description: Some major findings. With some figures, you can draft a new paper.
 item.figure: Figure
-item.figure.description: A nice looking figure.
-item.draftPaper: Draft Paper
+item.figure.description: A nice looking figure summarizing your hard work conducting various experiments.
 item.submittedPaper: Submitted Paper
 item.submittedPaper.description: A submitted paper, waiting for the judgement from the reviewers.
 item.resubmittedPaper: Resubmitted Paper
 item.resubmittedPaper.description: A resubmitted paper, waiting for another round of the judgement from the reviewers.
 item.paper: Paper
-item.paper.description: A published paper. All your hard work!
+item.paper.description: A published paper!
 item.rejectedPaper: Rejected Paper
 item.rejectedPaper.description: A rejected, waiting to be rewritten and resubmitted.
 item.conferencePaper: Conference Paper
-item.conferencePaper.description: A conference paper.
+item.conferencePaper.description: A published conference paper. Reduces the chance of losing your new ideas to other researchers.
 item.submittedConfPaper: Submitted Conference Paper
 item.submittedConfPaper.description: A submitted conference paper, waiting for the judgement from the reviewers.
 
 status.firstYear: First Year Excitement
-status.firstYear.description: Restores hope every month.
-status.brokenEquipment: Broken Equipment.
+status.firstYear.description: "**+1 hope** every month."
+status.brokenEquipment: Broken Equipment
 status.brokenEquipment.description: Cannot conduct experiments this month.
 status.callForPapers: Call for Papers
 status.callForPapers.description: You can submit a conference paper once you have a major result.
@@ -42,7 +41,10 @@ message.readPapers: Read some papers.
 message.gainNewIdea1: After digging into piles of papers, you suddenly gained a **new idea**.
 message.gainNewIdea2: After scratching your head for countless hours, you came up with a **new idea**.
 message.workOnIdea: Work on developing an idea.
-message.oldIdea: After talking with your advisor about your new idea, your advisor suggested you check an old paper. It turns out that it has been done before. 
+message.oldIdea1: After talking with your advisor about your new idea, your advisor suggested you check an old paper. It turns out that it has been done before. 
+message.oldIdea2: Your advisor thought your new idea is not interesting, and suggested you come up with a new one.
+message.oldIdea3: Your advisor thought your new idea is not novel enough, and suggested you read more papers. 
+message.oldIdea4: You came up with a bunch of ideas. However, upon further searching, you found that they have already been done before. 
 message.gainPrelimResult: Your idea is working! You obtained some a **preliminary result**.
 message.ideaNotWorking: It turned out that this idea is not working. Time to try another one.
 message.workOnPrelimResult: Work on developing a preliminary result.
@@ -82,7 +84,7 @@ message.equipmentNotFixed: You tried to fix it. However, it is still not working
 message.equipmentFixed2: Tech support arrived and fixed the lab equipment.
 message.newEquipment: Your advisor **upgraded the old lab equipment**. Everyone was excited.
 # conference event
-message.callForPapers: The great international conference on PhD simulation (ICPS) is calling for papers. Submission is open for the following 6 months. If you have any major result, you can submit.
+message.callForPapers: The great International Conference on PhD Simulation (ICPS) is **calling for papers**. Submission is open for the following **6 months**. If you have any major result, you can submit.
 message.workOnConf: Work on a conference paper.
 message.finishedConfPaper: You finished the conference paper and submitted it!
 message.confPaperRejected: Your submission to ICPS{{year}} was **REJECTED**. The reviewers were not convinced of the significance your results. Nevertheless, you can continue to work on these results.

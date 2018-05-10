@@ -4,6 +4,9 @@ import { Inventory, Item } from '../effect/item';
 import { EffectProviderCollectionChangedEvent } from '../effect/effect';
 import { renderText } from './textRenderer';
 import { StatusTable, Status } from '../effect/status';
+import { GuiModalBox } from './guiModalBox';
+import { GuiBase } from './guiBase';
+import { GameEngine } from '../gameEngine';
 
 export interface GuiGame {
 
@@ -13,7 +16,7 @@ export interface GuiGame {
 
 }
 
-export class GuiGameWindow implements GuiGame {
+export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
 
     private _messageContainer: HTMLParagraphElement;
     private _choicesContainer: HTMLElement;
@@ -22,22 +25,54 @@ export class GuiGameWindow implements GuiGame {
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
 
-    constructor(private _container: HTMLDivElement, private _ldict: LocalizationDictionary, private _gameState: GameState) {
+    private _modalBox: GuiModalBox;
+
+    constructor(container: HTMLDivElement, private _ldict: LocalizationDictionary, private _gameEngine: GameEngine) {
+        super(container);
+        this._modalBox = new GuiModalBox(this.retrieveElement('modal_container'));
         this._messageContainer = this.retrieveElement('message_container');
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
         this._choicesContainer = this.retrieveElement('choices_container');
         this._itemsContainer = this.retrieveElement('item_list');
         this._statusContainer = this.retrieveElement('status_list');
-        this._gameState.onVariableChanged = (gs, e) => {
+        this._gameEngine.gameState.onVariableChanged = (gs, e) => {
             this.handleVariableUpdate(gs, e);
         };
-        this._gameState.playerInventory.onChanged = (inv, e) => {
+        this._gameEngine.gameState.playerInventory.onChanged = (inv, e) => {
             this.updateItemList(<Inventory>inv, e);
         };
-        this._gameState.playerStatus.onChanged = (sTable, e) => {
+        this._gameEngine.gameState.playerStatus.onChanged = (sTable, e) => {
             this.updateStatusList(<StatusTable>sTable, e);
         }
+        this._itemsContainer.onclick = e => {
+            let target = e.target;
+            if (target instanceof HTMLLIElement) {
+                const itemId = target.getAttribute('data-item-id');
+                if (!itemId) return;
+                const item = this._gameEngine.itemRegistry.get(itemId);
+                this._modalBox.display(
+                    this._ldict.translate(item.unlocalizedName),
+                    renderText(item.unlocalizedDescription, _ldict, _gameEngine.gameState),
+                    this._ldict.translate('message.ok'),
+                    item.icon
+                );
+            } 
+        };
+        this._statusContainer.onclick = e => {
+            let target = e.target;
+            if (target instanceof HTMLLIElement) {
+                const statusId = target.getAttribute('data-status-id');
+                if (!statusId) return;
+                const status = this._gameEngine.statusRegistry.get(statusId);
+                this._modalBox.display(
+                    this._ldict.translate(status.unlocalizedName),
+                    renderText(status.unlocalizedDescription, _ldict, _gameEngine.gameState),
+                    this._ldict.translate('message.ok'),
+                    status.icon
+                );
+            }
+        };
     }
 
     retrieveElement<T extends HTMLElement>(id: string): T {
@@ -74,6 +109,7 @@ export class GuiGameWindow implements GuiGame {
         for (const itemId in inv.items) {
             let node = document.createElement('li');
             let item = inv.items[itemId];
+            node.setAttribute('data-item-id', item[0].id);
             if (item[0].rarity >= 10) {
                 node.className = 'r_legendary';
             } else if (item[0].rarity >= 6) {
@@ -97,6 +133,7 @@ export class GuiGameWindow implements GuiGame {
             let status = statusTable.items[itemId];
             node.textContent = this._ldict.translate(status[0].unlocalizedName);
             node.title = this._ldict.translate(status[0].unlocalizedDescription);
+            node.setAttribute('data-status-id', itemId);
             this._statusContainer.appendChild(node);
         }
     }
@@ -105,6 +142,7 @@ export class GuiGameWindow implements GuiGame {
         return new Promise<void>(resolve => {
             this.updateMessage(message, icon);
             const btnConfirm = document.createElement('a');
+            btnConfirm.className = 'btn';
             btnConfirm.href = 'javascript: void(0)';
             btnConfirm.textContent = this._ldict.translate(confirm);
             this._choicesContainer.appendChild(btnConfirm);
@@ -124,6 +162,7 @@ export class GuiGameWindow implements GuiGame {
             for (let i = 0;i < choices.length;i++) {
                 let btn = document.createElement('a');
                 let [choiceMessage, choiceId] = choices[i];
+                btn.className = 'btn';
                 btn.textContent = this._ldict.translate(choiceMessage);
                 btn.href = 'javascript: void(0);';
                 btn.setAttribute('data-choice-number', choiceId.toString());
@@ -139,7 +178,7 @@ export class GuiGameWindow implements GuiGame {
     }
 
     updateMessage(message: string, icon?: string): void {
-        let html = renderText(message, this._ldict, this._gameState);
+        let html = renderText(message, this._ldict, this._gameEngine.gameState);
         if (icon) {
             html += `<p><img src="${icon}" /></p>`;
         }

@@ -53,6 +53,20 @@ export class GameEngine {
     }
 
     /**
+     * Retrieves the item registry.
+     */
+    get itemRegistry(): ItemRegistry {
+        return this._itemRegistry;
+    }
+
+    /**
+     * Retrieves the status registry.
+     */
+    get statusRegistry(): StatusRegistry {
+        return this._statusRegistry;
+    }
+
+    /**
      * Retrieves the action proxy.
      */
     get actionProxy(): GuiActionProxy {

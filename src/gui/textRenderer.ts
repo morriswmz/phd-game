@@ -56,11 +56,6 @@ export function escapeHTML(s: string): string {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-interface StyledTextSegment {
-    text: string;
-    style: number;
-}
-
 function renderWithStyle(s: string): string {
     // Split into segments and render.
     let stack: number[] = [];

@@ -10,7 +10,7 @@ export class GameEventEngine {
     private _gameState: GameState;
     private _actionProxy: GuiActionProxy;
     // Event actions and condition have access to the same expression evaluator.
-    private _exprEngine: EventExpressionEvaluator;
+    private _exprEngine: EventExpressionEngine;
 
     constructor(gs: GameState, ap: GuiActionProxy, exprEngine: EventExpressionEngine) {
         this._gameState = gs;
