@@ -1,4 +1,5 @@
 import { Item } from "./item";
+import { SimpleRegistry } from "../utils/simpleRegistry";
 
 export interface Modifier {
     readonly relative: boolean;
@@ -59,7 +60,7 @@ export interface EffectProvider {
  * Registry for effect providers. Used to retrieve effect provider instances
  * by their id.
  */
-export class EffectProviderRegistry<T extends EffectProvider> {
+export class EffectProviderRegistry<T extends EffectProvider> implements SimpleRegistry<T> {
 
     protected _registry: { [id: string]: T; } = {};
 
@@ -113,7 +114,7 @@ export class EffectProviderCollection<T extends EffectProvider> {
         this._registry = registry;
     }
 
-    onChanged: ((sender: EffectProviderCollection<T>, event: EffectProviderCollectionChangedEvent<T>) => void) | undefined;
+    onChanged?: (sender: EffectProviderCollection<T>, event: EffectProviderCollectionChangedEvent<T>) => void;
 
     /**
      * Determines the maximum number of the effect providers of the same type

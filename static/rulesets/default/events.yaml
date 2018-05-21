@@ -334,7 +334,7 @@
 # review events
 # submitted -> accept
 #           -> reject -> resubmit -> accept
-#                                 -> reject -> lost figures
+#                                 -> reject -> resubmit ...
 - id: PaperReview
   trigger: MonthBegin
   probability: 0.8
@@ -390,10 +390,6 @@
     - id: DisplayMessage
       message: message.resubmittedPaperRejected
       confirm: message.unfortunate
-    - id: UpdateItemAmounts
-      updates:
-        resubmittedPaper: -1
-        majorResult: 1
     - id: UpdateVariable
       variable: player.hope
       value: player.hope - 20

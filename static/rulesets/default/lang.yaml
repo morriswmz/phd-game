@@ -1,4 +1,8 @@
 ---
+ui.ok: Ok.
+ui.items: "Items:"
+ui.status: "Status:"
+
 item.idea: Idea
 item.idea.description: A simple idea to be developed to a minor result.
 item.preliminaryResult: Preliminary Result

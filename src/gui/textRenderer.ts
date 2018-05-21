@@ -2,6 +2,15 @@ import { LocalizationDictionary } from '../i18n/localization';
 import { GameState } from '../gameState';
 import { isVariableName } from '../utils/expression';
 
+export interface HTMLTextRenderer {
+    /**
+     * Renders the source text into HTML text.
+     * @param src Source text (unlocalized, styled).
+     */
+    render(src: string): string;
+
+}
+
 const TextStyles = {
     Underline: 1,
     Emphasize: 2,

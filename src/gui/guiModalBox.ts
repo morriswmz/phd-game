@@ -1,4 +1,5 @@
 import { GuiBase } from './guiBase';
+import { HTMLTextRenderer } from './textRenderer';
 
 interface PendingMessage {
     title: string;
@@ -17,12 +18,10 @@ export class GuiModalBox extends GuiBase<HTMLDivElement> {
     private _pending: Array<PendingMessage> = [];
     private _shown: boolean = false;
 
-    constructor(container: HTMLDivElement) {
-        super(container);
+    constructor(container: HTMLDivElement, textRenderer: HTMLTextRenderer) {
+        super(container, textRenderer);
         // Init components.
-        this._contentBox = document.createElement('div');
-        this._contentBox.className = 'modal_content';
-        this._container.appendChild(this._contentBox);
+        this._contentBox = this.createAndAddChild('div', '', 'modal_content');
         this._titleContainer = document.createElement('h3');
         this._messageContainer = document.createElement('div');
         this._messageContainer.className = 'modal_message';
