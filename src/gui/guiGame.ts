@@ -9,10 +9,11 @@ import { GuiBase } from './guiBase';
 import { GameEngine } from '../gameEngine';
 import { GuiMessageWindow } from './guiMessageWindow';
 import { GuiItemList, GuiStatusList } from './guiEffectProviderList';
+import { GuiFX } from './guiFx';
 
 export interface GuiGame {
 
-    displayMessage(message: string, confirm: string, icon?: string): Promise<void>;
+    displayMessage(message: string, confirm: string, icon?: string, fx?: string): Promise<void>;
 
     displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number>;
 
@@ -23,6 +24,7 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
     private _messageWindow: GuiMessageWindow;
     private _modalBox: GuiModalBox;
     private _itemList: GuiItemList;
+    private _fx: GuiFX;
     private _statusList: GuiStatusList;
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
@@ -43,6 +45,9 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
             this.retrieveElement('status_window'), textRenderer,
             this._gameEngine.gameState.playerStatus,
             this._gameEngine.statusRegistry);
+        this._fx = new GuiFX(
+            this.retrieveElement('fx_container'),
+            textRenderer);
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
         // Handlers for game state updates.
@@ -66,6 +71,16 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
                 status.icon
             );
         };
+    }
+
+    playFx(fx: string): void {
+        switch (fx) {
+            case 'confetti':
+                this._fx.confetti();
+                break;
+            default:
+                throw new Error(`Unknown fx "${fx}".`);
+        }
     }
 
     updateUIText(): void {
@@ -100,7 +115,8 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
         }
     }
 
-    displayMessage(message: string, confirm: string, icon?: string): Promise<void> {
+    displayMessage(message: string, confirm: string, icon?: string, fx?: string): Promise<void> {
+        if (fx) this.playFx(fx);
         return this._messageWindow.displayMessage(message, confirm, icon);
     }
 

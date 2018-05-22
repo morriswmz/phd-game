@@ -18,7 +18,7 @@ export interface GuiActionProxy {
      * @param message Message (potentially unlocalized) to be displayed.
      * @param confirm Text (potentially unlocalized) of the confirm button.
      */
-    displayMessage(message: string, confirm: string, icon?: string): Promise<void>;
+    displayMessage(message: string, confirm: string, icon?: string, fx?: string): Promise<void>;
     /**
      * Provides the ability to display a message with multiple choices.
      * @param message Message (potentially unlocalized) to be displayed.

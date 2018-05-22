@@ -33,6 +33,7 @@
     message: message.graduated
     confirm: message.restart
     winning: true
+    fx: confetti
 - id: TheBeginning
   trigger: MonthBegin
   once: true

@@ -337,6 +337,66 @@ export class EACoinFlip extends EventAction {
 
 }
 
+export class EASwtich extends EventAction {
+
+    constructor(private _conditions: CompiledEventExpression[], private _actions: EventAction[][]) {
+        super();
+    }
+
+    static ID = 'Switch';
+
+    /**
+     * Creates an action that simulates the non-fall-through switch statement.
+     * Each condition will be evaluated sequentially.
+     * If multiple conditions evaluate to true, only the action associated with
+     * the first one will be executed.
+     * @param obj Schema:
+     *  ```
+     *  {
+     *      "id": "Switch",
+     *      "branches": [
+     *          {
+     *              "condition": string | number,
+     *              "actions": EventAction[]
+     *          }
+     *      ]
+     *  }
+     *  ```
+     * @param af 
+     * @param ec 
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASwtich {
+        const branches = obj['branches'];
+        if (!Array.isArray(branches)) throw new Error('Expecting an array of branches.');
+        let conditions: CompiledEventExpression[] = [];
+        let actions: EventAction[][] = [];
+        for (let branch of branches) {
+            if (!branch['condition']) throw new Error('Condition is required.');
+            let cond = branch['condition'];
+            if (typeof cond !== 'string' && typeof cond !== 'number') {
+                throw new Error('Condition must be either an expression or a number.');
+            }
+            conditions.push(ec.compile(cond));
+            if (!Array.isArray(branch['actions'])) throw new Error('Missing actions.');
+            actions.push(af.fromJSONArray(branch['actions']));
+        }
+        return new EASwtich(conditions, actions);
+    }
+
+    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+        // Check operation
+        for (let i = 0;i < this._conditions.length;i++) {
+            if (ee.eval(this._conditions[i])) {
+                for (let action of this._actions[i]) {
+                    await action.execute(gs, ap, ee);
+                }
+                break;
+            }
+        }
+    }
+
+}
+
 /**
  * Updates a variable.
  */
@@ -487,7 +547,8 @@ export class EAUpdateItemAmounts extends EventAction {
 
 export class EAEndGame extends EventAction {
 
-    constructor(private _message: string, private _confirm: string, private _winning: boolean) {
+    constructor(private _message: string, private _confirm: string,
+                private _winning: boolean, private _fx?: string) {
         super();
     }
 
@@ -501,7 +562,8 @@ export class EAEndGame extends EventAction {
      *      "id": "EndGame",
      *      "message": string,
      *      "confirm": string,
-     *      "winning": boolean
+     *      "winning": boolean,
+     *      "fx": string | undefined
      *  }
      *  ```
      * @param af 
@@ -511,11 +573,12 @@ export class EAEndGame extends EventAction {
         if (typeof(obj['message']) !== 'string') throw new Error('Missing message.');
         if (typeof(obj['confirm']) !== 'string') throw new Error('Missing confirm message.');
         if (typeof(obj['winning']) !== 'boolean') throw new Error('Missing winning status.');
-        return new EAEndGame(obj['message'], obj['confirm'], obj['winning']);
+        if (obj['fx'] && typeof(obj['fx']) !== 'string') throw new Error('FX must be a string.');
+        return new EAEndGame(obj['message'], obj['confirm'], obj['winning'], obj['fx']);
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        await ap.displayMessage(this._message, this._confirm);
+        await ap.displayMessage(this._message, this._confirm, '', this._fx);
         gs.endGameState = this._winning ? EndGameState.Winning : EndGameState.Losing;
     }
 
