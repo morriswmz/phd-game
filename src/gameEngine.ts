@@ -4,7 +4,7 @@ import { GuiGameWindow, GuiGame } from './gui/guiGame';
 import { ItemRegistry, Inventory } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
-import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus } from './event/actions';
+import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwtich } from './event/actions';
 import { EventConditionFactory, ECExpression } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -101,6 +101,7 @@ export class GameEngine {
         this._actionFactory.registerDeserializer(EAUpdateItemAmounts);
         this._actionFactory.registerDeserializer(EAEndGame);
         this._actionFactory.registerDeserializer(EASetStatus);
+        this._actionFactory.registerDeserializer(EASwtich);
         // Condition factory
         this._conditionFactory.registerDeserializer(ECExpression);
     }
@@ -119,6 +120,8 @@ export class GameEngine {
         this._gameState.setVarLimits('player.hope', 0, 100);
         this._eventEngine.enableAll();
         await this._eventEngine.trigger('Initialization');
+        await this._eventEngine.trigger('YearBegin');
+        await this._eventEngine.trigger('MonthBegin');
     }
 
     /**
@@ -130,17 +133,21 @@ export class GameEngine {
             await this.start();
             return;
         }
-        await this._eventEngine.trigger('MonthBegin');
         let month = this._gameState.getVar('month', true) + 1;
         let year = this._gameState.getVar('year', true);
+        let newYear = false;
         if (month === 13) {
             month = 1;
             ++year;
+            newYear = true;
             this._gameState.setVar('year', year);
-            await this._eventEngine.trigger('YearBegin');
         }
         this._gameState.setVar('month', month);
         this._gameState.playerStatus.tick();
+        if (newYear) {
+            await this._eventEngine.trigger('YearBegin');
+        } 
+        await this._eventEngine.trigger('MonthBegin');
     }
     
 }

@@ -15,4 +15,19 @@ status:
     effects:
       player.experimentBoost:
         relative: false
-        amount: 0.2
+        amount: 0.3
+  - id: cloudStorage
+    duration: Infinity
+  - id: burnOut
+    duration: Infinity
+    effects:
+      player.hopeBoost:
+        relative: false
+        amount: -5
+  - id: lateYearAnxiety
+    duration: Infinity
+    effects:
+      player.hopeBoost:
+        relative: false
+        amount: -1
+

@@ -57,7 +57,7 @@ export class GuiFX extends GuiBase<HTMLDivElement> {
         for (let i = 0;i < nActive;i++) {
             let p = new Particle('particle_confetti');
             p.x = Math.random() * viewPortWidth;
-            p.y = - 10 - Math.random() * 80;
+            p.y = - 10 - Math.random() * 160;
             p.vy = Math.random();
             p.ay = 9.8 / 60;
             p.element.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
