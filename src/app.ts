@@ -1,7 +1,7 @@
 import { GuiGameWindow } from './gui/guiGame';
 import { LocalizationDictionary } from './i18n/localization';
 import { GameEngine, GameConfig, GameActionProxy } from './gameEngine';
-import { renderText } from './gui/textRenderer';
+import { SimpleGameTextEngine } from './gui/textEngine';
 
 interface AppConfig extends GameConfig {
     languageFileUrl: string;
@@ -14,15 +14,13 @@ class App {
     private _gui: GuiGameWindow;
     private _gameEngine: GameEngine;
 
-    constructor(container: HTMLDivElement, config: AppConfig) {
+    constructor(container: HTMLElement, config: AppConfig) {
         this._config = Object.assign({}, config);
         this._ldict = new LocalizationDictionary();
         const ap = new GameActionProxy();
-        const textRenderer = {
-            render: (src: string) => renderText(src, this._ldict, this._gameEngine.gameState)
-        };
         this._gameEngine = new GameEngine(config, ap);
-        this._gui = new GuiGameWindow(container, textRenderer, this._gameEngine);
+        const textEngine = new SimpleGameTextEngine(this._ldict, this._gameEngine.gameState);
+        this._gui = new GuiGameWindow(container, textEngine, this._gameEngine);
         ap.attachGui(this._gui);       
     }
 
@@ -37,15 +35,12 @@ class App {
     }
 }
 
-let container = document.getElementById('game_window');
-if (container) {
-    const app = new App(<HTMLDivElement>container, {
-        languageFileUrl: 'rulesets/default/lang.yaml',
-        itemDefinitionUrl: 'rulesets/default/items.yaml',
-        statusDefinitionUrl: 'rulesets/default/status.yaml',
-        eventDefinitionUrl: 'rulesets/default/events.yaml'
-    });
-    app.start().then(() => {
-        console.log('App started successfully.');
-    });
-}
+const app = new App(document.body, {
+    languageFileUrl: 'rulesets/default/lang.yaml',
+    itemDefinitionUrl: 'rulesets/default/items.yaml',
+    statusDefinitionUrl: 'rulesets/default/status.yaml',
+    eventDefinitionUrl: 'rulesets/default/events.yaml'
+});
+app.start().then(() => {
+    console.log('App started successfully.');
+});

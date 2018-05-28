@@ -11,13 +11,22 @@
       player.canAttendConf: 0
       player.qualifyLevel: 0
       player.monthSkipped: 0
-      player.burnOutLevel: 0
+      player.exhaustionLevel: 0
       advisor.fundingLevel: 0
+      advisor.happiness: randi(5) + 5
       global.fundingChange: 0
       rule.papersRequired: 3
+      rule.figuresRequired: 3
   - id: SetStatus
     statusId: firstYear
     on: true
+- id: CommonVariableUpdates
+  trigger: MonthBegin
+  actions:
+  - id: UpdateVariables
+    updates:
+      player.hope: player.hope + calcEffectValue('player.hopeBoost', 0)
+      player.monthSkipped: 0
 - id: LostAllHope
   trigger: MonthBegin
   conditions:
@@ -26,6 +35,16 @@
   actions:
   - id: EndGame
     message: message.lostAllHope
+    confirm: message.restart
+    winning: false
+- id: Overdue
+  trigger: YearBegin
+  conditions:
+  - id: Expression
+    expression: year >= 8
+  actions:
+  - id: EndGame
+    message: message.overdue
     confirm: message.restart
     winning: false
 - id: TheBeginning
@@ -38,13 +57,6 @@
   - id: DisplayMessage
     message: message.qualifyNotice
     confirm: message.ok
-- id: CommonVariableUpdates
-  trigger: MonthBegin
-  actions:
-  - id: UpdateVariables
-    updates:
-      player.hope: player.hope + calcEffectValue('player.hopeBoost', 0)
-      player.monthSkipped: 0
 # Equipment event
 - id: EquipmentBroken
   trigger: MonthBegin
@@ -121,29 +133,29 @@
   - id: SetStatus
     statusId: cloudStorage
     on: true
-# Burn out event
-- id: BurnOut
+# Exhaustion event
+- id: Exhaustion
   trigger: MonthBegin
   probability: 0.7
   conditions:
   - id: Expression
-    expression: "!hasStatus('burnOut') && player.burnOutLevel >= 12"
+    expression: "!hasStatus('exhaustion') && player.exhaustionLevel >= 12"
   actions:
   - id: DisplayMessage
-    message: message.burnOut
+    message: message.exhaustion
     confirm: message.sucks
   - id: SetStatus
-    statusId: burnOut
+    statusId: exhaustion
     on: true
-- id: BurnOutBreak
+- id: ExhaustionBreak
   trigger: MonthBegin
   conditions:
   - id: Expression
-    expression: hasStatus('burnOut')
+    expression: hasStatus('exhaustion')
   probability: 0.5
   actions:
   - id: DisplayChoices
-    message: message.burnOutBreak
+    message: message.exhaustionBreak
     choices:
     - message: message.takeBreak
       actions:
@@ -152,29 +164,29 @@
         confirm: message.great
       - id: UpdateVariables
         updates:
-          player.burnOutLevel: 0
+          player.exhaustionLevel: 0
           player.monthSkipped: 1
           player.hope: player.hope + 5
       - id: SetStatus
-        statusId: burnOut
+        statusId: exhaustion
         on: false
     - message: message.noBreak
       actions:
       - id: DisplayMessage
-        message: message.burnOutIgnored
+        message: message.exhaustionIgnored
         confirm: message.ok
-- id: BurnOutBadMonth
+- id: ExhaustionBadMonth
   trigger: MonthBegin
   conditions:
   - id: Expression
-    expression: player.burnOutLevel >= 14
-  probability: 0.2 + player.burnOutLevel / 50
+    expression: player.exhaustionLevel >= 14
+  probability: 0.2 + player.exhaustionLevel / 50
   actions:
   - id: UpdateVariable
     variable: player.monthSkipped
     value: 1
   - id: DisplayChoices
-    message: message.burnOutBadMonth
+    message: message.exhaustionBadMonth
     choices:
     - message: message.takeBreak
       actions:
@@ -183,15 +195,15 @@
         confirm: message.great
       - id: UpdateVariables
         updates:
-          player.burnOutLevel: 0
+          player.exhaustionLevel: 0
           player.hope: player.hope + 5
       - id: SetStatus
-        statusId: burnOut
+        statusId: exhaustion
         on: false
     - message: message.noBreak
       actions:
       - id: DisplayMessage
-        message: message.burnOutNoProgress
+        message: message.exhaustionNoProgress
         confirm: message.ok
       - id: UpdateVariable
         variable: player.hope
@@ -261,6 +273,20 @@
         updates:
           advisor.fundingLevel: advisor.fundingLevel + global.fundingChange
           player.hope: player.hope - 5
+- id: FundingCut
+  trigger: MonthBegin
+  probability: 0.2
+  once: true
+  conditions:
+  - id: Expression
+    expression: eventOccurred('FundingChange') && advisor.fundingLevel < 0 && month % 3 === 0
+  actions:
+  - id: DisplayMessage
+    message: message.lostFunding
+    confirm: message.sucks
+  - id: UpdateVariables
+    updates:
+      player.hope: player.hope - 5
 - id: FundingNews
   trigger: YearBegin
   conditions:
@@ -285,6 +311,28 @@
     - id: UpdateVariable
       variable: global.fundingChange
       value: -1
+# Unhappy advisor
+- id: UnhappyAdvisor
+  trigger: MonthBegin
+  actions:
+  - id: Switch
+    branches:
+    - condition: advisor.happiness < 0 && !hasStatus('unhappyAdvisor')
+      actions:
+      - id: DisplayMessage
+        message: message.unhappyAdvisor
+        confirm: message.gotit
+      - id: SetStatus
+        statusId: unhappyAdvisor
+        on: true 
+    - condition: advisor.happiness >= 0 && hasStatus('unhappyAdvisor')
+      actions:
+      - id: DisplayMessage
+        message: message.advisorHappyAgain
+        confirm: message.cool
+      - id: SetStatus
+        statusId: unhappyAdvisor
+        on: false
 # Main choices
 # idea -> prelim -> major -> 2 figures -> submitted paper
 - id: MonthBeginTasks
@@ -307,6 +355,10 @@
     - message: message.prepareQualify
       requirement: year === 1 && month < 12 && itemCount('paper') < rule.papersRequired
       actions:
+      - id: UpdateVariables
+        updates:
+          player.qualifyLevel: player.qualifyLevel + 1
+          player.exhaustionLevel: player.exhaustionLevel + 1
       - id: Switch
         branches:
         - condition: player.qualifyLevel <= 4
@@ -319,10 +371,6 @@
           - id: DisplayMessage
             message: message.qualifyLevelMax
             confirm: message.great
-      - id: UpdateVariables
-        updates:
-          player.qualifyLevel: player.qualifyLevel + 1
-          player.burnOutLevel: player.burnOutLevel + 1
     - message: message.readPapers
       requirement: itemCount('paper') < rule.papersRequired
       actions:
@@ -364,38 +412,36 @@
           variable: player.hope
           value: player.hope - 5
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.workOnIdea
       requirement: itemCount('idea') > 0 && itemCount('paper') < rule.papersRequired
       actions:
       - id: GiveItem
         itemId: idea
         amount: -1
-      - id: Random
-        groups:
-        - weight: 0.70
-          actions:
-          - id: DisplayMessage
-            message: message.gainPrelimResult
-            confirm: message.soundsInteresting
-          - id: GiveItem
-            itemId: preliminaryResult
-            amount: 1
-          - id: UpdateVariable
-            variable: player.hope
-            value: player.hope + 2
-        - weight: 0.30
-          actions:
-          - id: DisplayMessage
-            message: message.ideaNotWorking
-            confirm: message.unfortunate
-          - id: UpdateVariable
-            variable: player.hope
-            value: player.hope - 5
+      - id: CoinFlip
+        probability: min(0.50 + player.readPapers / 50, 0.8)
+        success:
+        - id: DisplayMessage
+          message: message.gainPrelimResult
+          confirm: message.soundsInteresting
+        - id: GiveItem
+          itemId: preliminaryResult
+          amount: 1
+        - id: UpdateVariable
+          variable: player.hope
+          value: player.hope + 2
+        fail:
+        - id: DisplayMessage
+          message: message.ideaNotWorking
+          confirm: message.unfortunate
+        - id: UpdateVariable
+          variable: player.hope
+          value: player.hope - 5
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.workOnPrelimResult
       requirement: itemCount('preliminaryResult') > 0 && itemCount('paper') < rule.papersRequired
       actions:
@@ -424,10 +470,10 @@
             variable: player.hope
             value: player.hope - 5
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.workOnConf
-      requirement: hasStatus('callForPapers') && itemCount('majorResult') > 0 && itemCount('submittedConfPaper') === 0 && itemCount('paper') < rule.papersRequired
+      requirement: hasStatus('callForPapers') && itemCount('preliminaryResult') > 0 && itemCount('submittedConfPaper') === 0 && itemCount('paper') < rule.papersRequired
       actions:
       - id: DisplayMessage
         message: message.finishedConfPaper
@@ -435,12 +481,12 @@
       - id: UpdateItemAmounts
         updates:
           submittedConfPaper: 1
-          majorResult: -1
+          preliminaryResult: -1
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.workOnFigure
-      requirement: itemCount('majorResult') > 0 && itemCount('figure') < 2 * itemCount('majorResult') && !hasStatus('brokenEquipment') && itemCount('paper') < rule.papersRequired
+      requirement: itemCount('majorResult') > 0 && itemCount('figure') < rule.figuresRequired * itemCount('majorResult') && !hasStatus('brokenEquipment') && itemCount('paper') < rule.papersRequired
       actions:
       - id: Random
         groups:
@@ -455,17 +501,19 @@
           - id: UpdateVariable
             variable: player.hope
             value: player.hope + 5
-        - weight: 0.3
+        - weight: 0.25
           actions:
           - id: DisplayRandomMessage
             messages:
             - message.noFigure1
             - message.noFigure2
+            - message.noFigure3
+            - message.noFigure4
             confirm: message.ok
           - id: UpdateVariable
             variable: player.hope
             value: player.hope - 5
-        - weight: 0.1
+        - weight: 0.15
           actions:
           - id: Switch
             branches:
@@ -477,6 +525,9 @@
               - id: GiveItem
                 itemId: figure
                 amount: 1
+              - id: UpdateVariable
+                variable: player.hope
+                value: player.hope + 5
             - condition: 1
               actions:
               - id: DisplayMessage
@@ -494,13 +545,13 @@
             variable: player.hope
             value: player.hope - 5
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.workOnPaper
-      requirement: itemCount('majorResult') > 0 && itemCount('figure') > 1 && itemCount('paper') < rule.papersRequired
+      requirement: itemCount('majorResult') > 0 && itemCount('figure') >= rule.figuresRequired && itemCount('paper') < rule.papersRequired
       actions:
       - id: CoinFlip
-        probability: 0.8 + itemCount('paper') / 20
+        probability: 0.7 + itemCount('paper') / 20
         success:
         - id: DisplayMessage
           message: message.draftPaperComplete
@@ -509,11 +560,11 @@
           updates:
             submittedPaper: 1
             majorResult: -1
-            figure: -2
+            figure: -rule.figuresRequired
         - id: UpdateVariables
           updates:
             player.hope: player.hope + 3
-            player.burnOutLevel: player.burnOutLevel + 1
+            player.exhaustionLevel: player.exhaustionLevel + 1
         fail:
         - id: DisplayRandomMessage
           messages:
@@ -532,8 +583,8 @@
           resubmittedPaper: 1
           rejectedPaper: -1
       - id: UpdateVariable
-        variable: player.burnOutLevel
-        value: player.burnOutLevel + 1
+        variable: player.exhaustionLevel
+        value: player.exhaustionLevel + 1
     - message: message.slackOff
       requirement: itemCount('paper') < rule.papersRequired
       actions:
@@ -549,8 +600,8 @@
             confirm: message.oops
           - id: UpdateVariables
             updates:
-              player.hope: player.hope - 10
-              player.rulesBroken: player.rulesBroken + 1
+              # player.hope: player.hope - 10
+              advisor.happiness: advisor.happiness - 2
         - weight: 2
           actions:
           - id: DisplayMessage
@@ -560,10 +611,10 @@
             variable: player.hope
             value: player.hope + 5
       - id: UpdateVariable
-        variable: player.burnOutLevel
+        variable: player.exhaustionLevel
         value: 0
       - id: SetStatus
-        statusId: burnOut
+        statusId: exhaustion
         on: false
 # Review events
 # submitted -> accept
@@ -571,7 +622,7 @@
 #                                 -> reject -> resubmit ...
 - id: PaperReview
   trigger: MonthBegin
-  probability: 0.70
+  probability: 0.60
   conditions:
   - id: Expression
     expression: itemCount('submittedPaper') >= 1
@@ -586,9 +637,10 @@
       updates:
         submittedPaper: -1
         paper: 1
-    - id: UpdateVariable
-      variable: player.hope
-      value: player.hope + 10
+    - id: UpdateVariables
+      updates:
+        player.hope: player.hope + 10
+        advisor.happiness: advisor.happiness + 5
     fail:
     - id: DisplayRandomMessage
       messages:
@@ -611,7 +663,7 @@
       value: player.hope - 10
 - id: ResubmittedPaperReview
   trigger: MonthBegin
-  probability: 0.75
+  probability: 0.70
   conditions:
   - id: Expression
     expression: itemCount('resubmittedPaper') >= 1
@@ -626,9 +678,10 @@
       updates:
         resubmittedPaper: -1
         paper: 1
-    - id: UpdateVariable
-      variable: player.hope
-      value: player.hope + 10
+    - id: UpdateVariables
+      updates:
+        player.hope: player.hope + 10
+        advisor.happiness: advisor.happiness + 5
     fail:
     - id: DisplayRandomMessage
       messages:
@@ -678,7 +731,7 @@
   trigger: MonthBegin
   conditions:
   - id: Expression
-    expression: itemCount('figure') >= 2
+    expression: itemCount('figure') >= 3
   actions:
   - id: CoinFlip
     probability: clip(0.1 - itemCount('paper') / 30, 0, 1)
@@ -721,6 +774,7 @@
       majorResult: 1
 # Conference event chain
 # 4 - 9 call for papers, 10-11 review 12 conf
+# Prelim -> Conf paper
 - id: CallForPapers
   trigger: MonthBegin
   conditions:
@@ -740,7 +794,7 @@
     expression: month === 11 && itemCount('submittedConfPaper') > 0
   actions:
   - id: CoinFlip
-    probability: 0.4 + player.readPapers / 50
+    probability: min(0.5, 0.3 + player.readPapers / 50)
     success:
     - id: DisplayRandomMessage
       messages:
@@ -751,6 +805,7 @@
       updates:
         player.hope: player.hope + 5
         player.canAttendConf: 1
+        advisor.happiness: advisor.happiness + 3
     - id: UpdateItemAmounts
       updates:
         conferencePaper: 1
@@ -761,33 +816,63 @@
       confirm: message.unfortunate
     - id: UpdateVariables
       updates:
-        player.hope: player.hope - 10
+        player.hope: player.hope - 5
     - id: UpdateItemAmounts
       updates:
         submittedConfPaper: -1
-        majorResult: 1
+        preliminaryResult: 1
 - id: ConfMeeting
   trigger: MonthBegin
   conditions:
   - id: Expression
     expression: month === 12 && player.canAttendConf
   actions:
-  - id: DisplayMessage
+  - id: DisplayChoices
     message: message.attendConf
-    confirm: message.cool
-  - id: UpdateVariables
-    updates:
-      player.hope: player.hope + 5
-      player.canAttendConf: 0
-  - id: CoinFlip
-    probability: 0.6
-    success:
-    - id: DisplayMessage
-      message: message.confNewIdea
-      confirm: message.great
-    - id: GiveItem
-      itemId: idea
-      amount: 1
+    choices:
+    - message: message.skipConfSession
+      actions:
+      - id: CoinFlip
+        probability: 0.6
+        success:
+        - id: DisplayRandomMessage
+          messages:
+          - message.confNiceTour1
+          - message.confNiceTour2
+          confirm: message.great
+        - id: UpdateVariables
+          updates:
+            player.hope: player.hope + 5
+        fail:
+        - id: DisplayRandomMessage
+          messages:
+          - message.skipConfSessionFail1
+          - message.skipConfSessionFail2
+          confirm: message.oops
+        - id: UpdateVariables
+          updates:
+            advisor.happiness: advisor.happiness - 3
+    - message: message.attendConfSession
+      actions:
+      - id: CoinFlip
+        probability: 0.6
+        success:
+        - id: DisplayMessage
+          message: message.confNewIdea
+          confirm: message.great
+        - id: GiveItem
+          itemId: idea
+          amount: 1
+        fail:
+        - id: DisplayMessage
+          message: message.confNoNewIdea
+          confirm: message.great
+        - id: UpdateVariable
+          variable: player.hope
+          value: player.hope + 5
+  - id: UpdateVariable
+    variable: player.canAttendConf
+    value: 0
 # Random events
 - id: PaperCitation
   trigger: MonthBegin
@@ -831,6 +916,9 @@
   - id: DisplayMessage
     message: message.qualifyReminder
     confirm: message.gotit
+  - id: UpdateVariable
+    variable: advisor.happiness
+    value: advisor.happiness - 2
 - id: TooManyIdeas
   trigger: MonthBegin
   once: true
@@ -841,6 +929,9 @@
   - id: DisplayMessage
     message: message.tooManyIdeas
     confirm: message.ok
+  - id: UpdateVariable
+    variable: advisor.happiness
+    value: advisor.happiness - 2
 - id: NotEnoughPapers
   trigger: MonthBegin
   once: true
@@ -851,6 +942,9 @@
   - id: DisplayMessage
     message: message.notEnoughPapers
     confirm: message.workingOnIt
+  - id: UpdateVariable
+    variable: advisor.happiness
+    value: advisor.happiness - 3
 - id: RejectedPaper
   trigger: MonthBegin
   once: true

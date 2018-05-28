@@ -2,7 +2,7 @@ import { GuiBase } from './guiBase';
 import { SimpleRegistry, IDOwner } from '../utils/simpleRegistry';
 import { EffectProviderCollection, EffectProvider, EffectProviderCollectionChangedEvent } from '../effect/effect';
 import { Item } from '../effect/item';
-import { HTMLTextRenderer } from './textRenderer';
+import { GameTextEngine } from './textEngine';
 import { Status } from '../effect/status';
 
 /**
@@ -16,11 +16,11 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
     protected _registry: SimpleRegistry<T>;
 
     constructor(container: HTMLElement,
-                textRenderer: HTMLTextRenderer,
+                textEngine: GameTextEngine,
                 collection: EffectProviderCollection<T>,
                 registry: SimpleRegistry<T>)
     {   
-        super(container, textRenderer);
+        super(container, textEngine);
         this._collection = collection;
         this._registry = registry;
         this._titleContainer = this.createAndAddChild('h3');
@@ -40,7 +40,7 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
     onItemClicked?: (item: T) => void;
 
     setTitle(title: string): void {
-        this._titleContainer.innerHTML = this._textRenderer.render(title);
+        this._titleContainer.innerHTML = this._textEngine.localizeAndRender(title);
     }
     
     /**
@@ -75,7 +75,7 @@ export class GuiItemList extends GuiEffectProviderList<Item> {
             } else if (item[0].rarity >= 3) {
                 node.className = 'r_uncommon';
             }
-            node.innerHTML = this._textRenderer.render(item[0].unlocalizedName) + ' x' + item[1].toString();
+            node.innerHTML = this._textEngine.localizeAndRender(item[0].unlocalizedName) + ' x' + item[1].toString();
             this._listContainer.appendChild(node);
         }
     }
@@ -94,7 +94,7 @@ export class GuiStatusList extends GuiEffectProviderList<Status> {
         for (const itemId in collection.items) {
             let node = document.createElement('li');
             let status = collection.items[itemId];
-            node.innerHTML = this._textRenderer.render(status[0].unlocalizedName);
+            node.innerHTML = this._textEngine.localizeAndRender(status[0].unlocalizedName);
             node.setAttribute('data-status-id', itemId);
             this._listContainer.appendChild(node);
         }

@@ -1,5 +1,5 @@
 import { GuiBase } from './guiBase';
-import { HTMLTextRenderer } from './textRenderer';
+import { GameTextEngine } from './textEngine';
 
 interface PendingMessage {
     title: string;
@@ -18,8 +18,8 @@ export class GuiModalBox extends GuiBase<HTMLDivElement> {
     private _pending: Array<PendingMessage> = [];
     private _shown: boolean = false;
 
-    constructor(container: HTMLDivElement, textRenderer: HTMLTextRenderer) {
-        super(container, textRenderer);
+    constructor(container: HTMLDivElement, textEngine: GameTextEngine) {
+        super(container, textEngine);
         // Init components.
         this._contentBox = this.createAndAddChild('div', '', 'modal_content');
         this._titleContainer = document.createElement('h3');
@@ -52,13 +52,18 @@ export class GuiModalBox extends GuiBase<HTMLDivElement> {
     display(title: string, message: string, confirm: string, icon?: string): void {
         if (this._shown) {
             this._pending.push({
-                title: title,
-                message: message,
-                confirm: confirm,
+                title: this._textEngine.localizeAndRender(title),
+                message: this._textEngine.localizeAndRender(message),
+                confirm: this._textEngine.localizeAndRender(confirm),
                 icon: icon
             });
         } else {
-            this._setContent(title, message, confirm, icon);
+            this._setContent(
+                this._textEngine.localizeAndRender(title),
+                this._textEngine.localizeAndRender(message),
+                this._textEngine.localizeAndRender(confirm),
+                icon
+            );
             this.setHidden(false);
         }
     }

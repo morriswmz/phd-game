@@ -18,7 +18,7 @@ status:
         amount: 0.3
   - id: cloudStorage
     duration: Infinity
-  - id: burnOut
+  - id: exhaustion
     duration: Infinity
     effects:
       player.hopeBoost:
@@ -30,4 +30,10 @@ status:
       player.hopeBoost:
         relative: false
         amount: -1
+  - id: unhappyAdvisor
+    duration: Infinity
+    effects:
+      player.hopeBoost:
+        relative: false
+        amount: -5
 

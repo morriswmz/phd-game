@@ -4,17 +4,44 @@ import { GameState } from '../gameState';
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
     random(): number;
+    randi(x: number): number;
     max(...values: number[]): number;
     min(...values: number[]): number;
     floor(x: number): number;
     round(x: number): number;
     ceil(x: number): number;
     clip(x: number, min: number, max: number): number;
-    // Game state related function.
+    /**
+     * Sets variable limits.
+     */
+    setVarLimits(varName: string, lb: number, ub: number): void;
+    /**
+     * Retrives the upper bound of a game variable.
+     */
+    upperBound(varName: string): number;
+    /**
+     * Retrives the lower bound of a game variable.  
+     */  
+    lowerBound(varName: string): number;
+    /**
+     * Checks if the specified event has occurred.
+     */
     eventOccurred(id: string): boolean;
+    /**
+     * Returns the number of specified items.
+     */
     itemCount(id: string): number;
+    /**
+     * Returns the total months.
+     */
     totalMonths(): number;
+    /**
+     * Checks if the player has the specified status.
+     */
     hasStatus(id: string): boolean;
+    /**
+     * Calculates the effect value.
+     */
     calcEffectValue(id: string, base: number): number;
 }
 
@@ -37,7 +64,10 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
     private _initFunctionTable(): EventExpressionFunctionTable {
         return {
             getVar: varName => this._gameState.getVar(varName, true),
+            setVarLimits: (varName: string, lb: number, ub: number) => this._gameState.setVarLimits(varName, lb, ub),
             eventOccurred: id => this._gameState.occurredEvents[id] != undefined,
+            upperBound: varName => this._gameState.getVarLimits(varName)[1],
+            lowerBound: varName => this._gameState.getVarLimits(varName)[0],
             itemCount: id => this._gameState.playerInventory.count(id),
             totalMonths: () => this._gameState.getVar('year', true) * 12 + this._gameState.getVar('month', true),
             calcEffectValue: (id, base) => {
@@ -47,6 +77,7 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
             },
             hasStatus: id => this._gameState.playerStatus.count(id) > 0,
             random: Math.random,
+            randi: x => Math.floor(Math.random()),
             max: Math.max,
             min: Math.min,
             floor: Math.floor,

@@ -2,7 +2,6 @@ import { LocalizationDictionary } from '../i18n/localization';
 import { GameState, VariableChangedEvent } from '../gameState';
 import { Inventory, Item } from '../effect/item';
 import { EffectProviderCollectionChangedEvent } from '../effect/effect';
-import { renderText, HTMLTextRenderer } from './textRenderer';
 import { StatusTable, Status } from '../effect/status';
 import { GuiModalBox } from './guiModalBox';
 import { GuiBase } from './guiBase';
@@ -10,6 +9,7 @@ import { GameEngine } from '../gameEngine';
 import { GuiMessageWindow } from './guiMessageWindow';
 import { GuiItemList, GuiStatusList } from './guiEffectProviderList';
 import { GuiFX } from './guiFx';
+import { GameTextEngine } from './textEngine';
 
 export interface GuiGame {
 
@@ -19,7 +19,7 @@ export interface GuiGame {
 
 }
 
-export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
+export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
 
     private _messageWindow: GuiMessageWindow;
     private _modalBox: GuiModalBox;
@@ -28,28 +28,32 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
     private _statusList: GuiStatusList;
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
+    private _btnHelp: HTMLAnchorElement;
+    private _btnPrivacyNotice: HTMLAnchorElement;
 
     private _gameEngine: GameEngine;
 
-    constructor(container: HTMLDivElement, textRenderer: HTMLTextRenderer, gameEngine: GameEngine) {
-        super(container, textRenderer);
+    constructor(container: HTMLElement, textEngine: GameTextEngine, gameEngine: GameEngine) {
+        super(container, textEngine);
         this._gameEngine = gameEngine;
         // Initialize sub-components.
-        this._messageWindow = new GuiMessageWindow(this.retrieveElement('message_window'), textRenderer);
-        this._modalBox = new GuiModalBox(this.retrieveElement('modal_container'), textRenderer);
+        this._messageWindow = new GuiMessageWindow(this.retrieveElement('message_window'), textEngine);
+        this._modalBox = new GuiModalBox(this.retrieveElement('modal_container'), textEngine);
         this._itemList = new GuiItemList(
-            this.retrieveElement('items_window'), textRenderer,
+            this.retrieveElement('items_window'), textEngine,
             this._gameEngine.gameState.playerInventory,
             this._gameEngine.itemRegistry);
         this._statusList = new GuiStatusList(
-            this.retrieveElement('status_window'), textRenderer,
+            this.retrieveElement('status_window'), textEngine,
             this._gameEngine.gameState.playerStatus,
             this._gameEngine.statusRegistry);
         this._fx = new GuiFX(
             this.retrieveElement('fx_container'),
-            textRenderer);
+            textEngine);
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
+        this._btnHelp = this.retrieveElement('btn_help');
+        this._btnPrivacyNotice = this.retrieveElement('btn_privacy_notice');
         // Handlers for game state updates.
         this._gameEngine.gameState.onVariableChanged = (gs, e) => {
             this.handleVariableUpdate(gs, e);
@@ -57,18 +61,33 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
         // Event handlers for items/status list.
         this._itemList.onItemClicked = item => {
             this._modalBox.display(
-                this._textRenderer.render(item.unlocalizedName),
-                this._textRenderer.render(item.unlocalizedDescription),
-                this._textRenderer.render('ui.ok'),
+                item.unlocalizedName,
+                item.unlocalizedDescription,
+                'ui.ok',
                 item.icon
             );
         };
         this._statusList.onItemClicked = status => {
             this._modalBox.display(
-                this._textRenderer.render(status.unlocalizedName),
-                this._textRenderer.render(status.unlocalizedDescription),
-                this._textRenderer.render('ui.ok'),
+                status.unlocalizedName,
+                status.unlocalizedDescription,
+                'ui.ok',
                 status.icon
+            );
+        };
+        // Other event handlers
+        this._btnHelp.onclick = e => {
+            this._modalBox.display(
+                'ui.helpTitle',
+                'ui.helpContent',
+                'ui.ok'
+            );
+        };
+        this._btnPrivacyNotice.onclick = e => {
+            this._modalBox.display(
+                'ui.privacyNoticeTitle',
+                'ui.privacyNoticeContent',
+                'ui.ok'
             );
         };
     }
@@ -84,6 +103,8 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
     }
 
     updateUIText(): void {
+        this._btnHelp.innerHTML = this._textEngine.localizeAndRender('ui.helpTitle');
+        this._btnPrivacyNotice.innerHTML = this._textEngine.localizeAndRender('ui.privacyNoticeTitle');
         this._itemList.setTitle('ui.items');
         this._statusList.setTitle('ui.status');        
     }
@@ -106,11 +127,11 @@ export class GuiGameWindow extends GuiBase<HTMLDivElement> implements GuiGame {
                 } else {
                     this._hopeMeter.className = 'normal';
                 }
-                this._hopeMeter.textContent = `Hope ${e.newValue}/${gs.getVarLimits(e.varName)[1]}`;
+                this._hopeMeter.innerHTML = this._textEngine.localizeAndRender('ui.hopeMeter');
                 break;
             case 'year':
             case 'month':
-                this._timeMeter.textContent = `Year ${gs.getVar('year', true)} Month ${gs.getVar('month', true)}`;
+                this._timeMeter.innerHTML = this._textEngine.localizeAndRender('ui.timeMeter');
                 break;
         }
     }

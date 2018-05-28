@@ -31,11 +31,29 @@ export class GameEventLoader {
         return obj.map(item => this.parseEvent(item));
     }
 
+    /**
+     * Creates a game event from its description.
+     * Schema:
+     *  ```
+     *  {
+     *      id: string,
+     *      trigger: string | undefined, // undefined means never triggered.
+     *      conditions: EventCondition[] | undefined,
+     *      probability: number | string | undefined,
+     *      once: boolean | undefined,
+     *      exclusions: string[] | undefined,
+     *      actions: EventAction[]
+     *  }
+     *  ```
+     * @param obj JSON-like object.
+     */
     parseEvent(obj: any): GameEvent {
         if (obj['id'] == undefined) throw new Error('Missing event id.');
         const id = obj['id'];
-        if (obj['trigger'] == undefined) throw new Error('Missing event trigger.');
-        const trigger = obj['trigger'];
+        if (obj['trigger'] != undefined && typeof(obj['trigger']) !== 'string') {
+            throw new Error('Event trigger must be a string.');
+        }
+        const trigger = obj['trigger'] || '';
         const conditions = Array.isArray(obj['conditions'])
             ? obj['conditions'].map((item: any) => this._conditionFactory.fromJSONObject(item))
             : [];
@@ -55,7 +73,6 @@ export class GameEventLoader {
         if (!Array.isArray(obj['actions'])) throw new Error('Missing actions.');
         const actions = obj['actions'].map((item: any) => this._actionFactory.fromJSONObject(item));
         const once = !!obj['once'];
-        const disabled = !!obj['disabled'];
         return new GameEvent(id, trigger, conditions, actions, probability, exclusions, once);
     }
 

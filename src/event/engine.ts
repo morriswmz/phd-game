@@ -1,4 +1,4 @@
-import { GameEvent, GuiActionProxy } from './core';
+import { GameEvent, GuiActionProxy, EventAction } from './core';
 import { GameState, EndGameState } from '../gameState';
 import { EventExpressionEvaluator, EventExpressionEngine } from './expression';
 
@@ -56,6 +56,7 @@ export class GameEventEngine {
      * of every action.
      */
     async trigger(t: string): Promise<void> {
+        if (t.length === 0) throw new Error('Trigger id cannot be empty.');
         const events = this._events[t];
         if (!events) return;
         let exclusions: { [key: string]: boolean; } = {};
@@ -89,20 +90,24 @@ export class GameEventEngine {
             }
             ++this._gameState.occurredEvents[e.id];
             // Execute actions
-            for (let a of e.actions) {
-                await a.execute(this._gameState, this._actionProxy, this._exprEngine);
-                if (this.onActionExecuted) this.onActionExecuted(this._gameState);
-                if (this._gameState.endGameState !== EndGameState.None) {
-                    // Stop processing further actions or events
-                    gameEnded = true;
-                    break;
-                }
-            }
+            gameEnded = await this.executeActions(e.actions);
             // Once
             if (e.once) {
                 this._eventIdMap[e.id][1] = true;
             }
         }
+    }
+
+    async executeActions(actions: EventAction[]): Promise<boolean> {
+        for (let a of actions) {
+            await a.execute(this._gameState, this._actionProxy, this._exprEngine);
+            if (this.onActionExecuted) this.onActionExecuted(this._gameState);
+            if (this._gameState.endGameState !== EndGameState.None) {
+                // Stop processing further actions or events
+                return true;
+            }
+        }
+        return false;
     }
 
 }

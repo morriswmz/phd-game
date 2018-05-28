@@ -1,13 +1,13 @@
-import { HTMLTextRenderer } from "./textRenderer";
+import { GameTextEngine } from './textEngine';
 
 export class GuiBase<T extends HTMLElement> {
 
     protected _container: T;
-    protected _textRenderer: HTMLTextRenderer;
+    protected _textEngine: GameTextEngine;
 
-    constructor(container: T, textRenderer: HTMLTextRenderer) {
+    constructor(container: T, textRenderer: GameTextEngine) {
         this._container = container;
-        this._textRenderer = textRenderer
+        this._textEngine = textRenderer
     }
 
     setHidden(hidden: boolean): void {
