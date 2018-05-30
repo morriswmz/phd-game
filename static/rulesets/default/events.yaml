@@ -20,6 +20,28 @@
   - id: SetStatus
     statusId: firstYear
     on: true
+- id: TheBeginning
+  trigger: MonthBegin
+  once: true
+  actions:
+  - id: DisplayChoices
+    message: message.beginning
+    choices:
+    - message: message.acceptOffer
+      actions:
+      - id: DisplayMessage
+        message: message.acceptedOffer
+        confirm: message.excited
+      - id: DisplayMessage
+        message: message.qualifyNotice
+        confirm: message.ok
+    - message: message.declineOffer
+      actions:
+      - id: EndGame
+        message: message.declinedOffer
+        confirm: message.restart
+        winning: false
+    confirm: message.excited
 - id: CommonVariableUpdates
   trigger: MonthBegin
   actions:
@@ -47,16 +69,6 @@
     message: message.overdue
     confirm: message.restart
     winning: false
-- id: TheBeginning
-  trigger: MonthBegin
-  once: true
-  actions:
-  - id: DisplayMessage
-    message: message.beginning
-    confirm: message.excited
-  - id: DisplayMessage
-    message: message.qualifyNotice
-    confirm: message.ok
 # Equipment event
 - id: EquipmentBroken
   trigger: MonthBegin

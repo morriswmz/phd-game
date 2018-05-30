@@ -5,12 +5,12 @@ ui.status: "Status:"
 ui.privacyNoticeTitle: Privacy Notice
 ui.privacyNoticeContent: This webpage is hosted under research.wmz.ninja, which uses Google Analytics (which uses cookies) to collect basic anonymous data for website statistics. You are free to disable cookies or enable Do Not Track.
 ui.helpTitle: Help
-ui.helpContent: Simply make your choice at the beginning of each month. All outcomes are determined by the random number generator. Do not take them seriously. **GOOD LUCK!**
+ui.helpContent: Simply make your choice at the beginning of each month. All outcomes are determined by the random number generator. Do not take them seriously. **Sometimes the RNG can be brutal.**
 ui.hopeMeter: Hope {{player.hope}}/100
 ui.timeMeter: Year {{year}} Month {{month}}
 
 item.idea: Idea
-item.idea.description: A simple idea to be developed to a minor result.
+item.idea.description: A simple idea to be developed to a preliminary result.
 item.preliminaryResult: Preliminary Result
 item.preliminaryResult.description: Some preliminary findings. Can be potentially developed into a major result.
 item.majorResult: Major Result
@@ -74,7 +74,11 @@ message.lostFunding: The funding of one of your advisor's projects was **cut**. 
 message.unhappyAdvisor: Your advisor seemed to be unhappy about your recent performance. "Research is a challenging task. I hope you could put more efforts into it."
 message.advisorHappyAgain: Your advisor seemed to be quite satisfied with your recent performance.
 # main events
-message.beginning: Congratulations. You have been admitted as a new PhD student here. You are required to publish at least **3 journal papers** to qualify your degree.
+message.beginning: Congratulations. You have been **admitted** as a new PhD student here. Will you accept the offer?
+message.acceptOffer: Accept the offer.
+message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **3 journal papers** to qualify your degree.
+message.declineOffer: Decline the offer.
+message.declinedOffer: You changed your mind and **declined the offer**.
 message.newMonth: A new month begins. Let us check the to-do list.
 message.readPapers: Read some papers.
 message.gainNewIdea1: After digging into piles of papers, you suddenly gained a **new idea**.
@@ -102,7 +106,7 @@ message.lostDataRecovered: The computer crashed when processing the data. Luckil
 message.wrongFigure: You obtained some contradicting results. Something went wrong and you need to more time to check it.
 message.workOnPaper: Work on a draft paper.
 message.draftPaperComplete: You completed your draft paper and submitted it!
-message.draftPaperIncomplete1: You completed your draft paper. However, your advisor was too busy to go through the draft paper with you last month.
+message.draftPaperIncomplete1: Your advisor was too busy to go through the draft paper with you last month.
 message.draftPaperIncomplete2: Despite your effort, you did not complete your draft paper. You need to add more details to the background section.
 message.draftPaperIncomplete3: Despite your effort, you did not complete your draft paper. You need to add more details to the result section.
 message.paperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
