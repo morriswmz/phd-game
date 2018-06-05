@@ -63,6 +63,9 @@ em {
     flex-direction: row;
     justify-content: space-evenly;
 }
+#status_bar > div {
+    margin: 0 1em;
+}
 .warning {
     color: #ffb300;
 }
