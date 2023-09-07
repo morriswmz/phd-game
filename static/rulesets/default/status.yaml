@@ -36,4 +36,3 @@ status:
       player.hopeBoost:
         relative: false
         amount: -5
-

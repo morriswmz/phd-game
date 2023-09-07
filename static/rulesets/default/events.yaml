@@ -74,8 +74,8 @@
   trigger: MonthBegin
   conditions:
   - id: Expression
-    expression: "!hasStatus('brokenEquipment')"
-  probability: 0.03
+    expression: (month >= 4 || year > 1) && !hasStatus('brokenEquipment')
+  probability: 0.04
   exclusions:
   - EquipmentRepaired
   actions:
@@ -104,11 +104,28 @@
             confirm: message.great
           - id: UpdateVariable
             variable: player.hope
-            value: player.hope + 2
+            value: player.hope + 3
         - weight: 0.6
           actions:
           - id: DisplayMessage
             message: message.equipmentNotFixed
+            confirm: message.unfortunate
+          - id: SetStatus
+            statusId: brokenEquipment
+            on: true
+    - message: message.contactEquipmentSupport
+      actions:
+      - id: Random
+        groups:
+        - weight: 0.7
+          actions:
+          - id: DisplayMessage
+            message: message.equipmentFixedByTechSupport
+            confirm: message.great
+        - weight: 0.3
+          actions:
+          - id: DisplayMessage
+            message: message.equipmentNotFixedByTechSupport
             confirm: message.unfortunate
           - id: SetStatus
             statusId: brokenEquipment
@@ -583,6 +600,10 @@
           - message.draftPaperIncomplete1
           - message.draftPaperIncomplete2
           - message.draftPaperIncomplete3
+          - message.draftPaperIncomplete4
+          - message.draftPaperIncomplete5
+          - message.draftPaperIncomplete6
+          - message.draftPaperIncomplete7
           confirm: message.ok
     - message: message.revisePaper
       requirement: itemCount('rejectedPaper') > 0 && itemCount('paper') < rule.papersRequired
@@ -665,6 +686,7 @@
       - message.paperRejected7
       - message.paperRejected8
       - message.paperRejected9
+      - message.paperRejected10
       confirm: message.unfortunate
     - id: UpdateItemAmounts
       updates:
@@ -766,6 +788,7 @@
     messages:
     - message.seminar1
     - message.seminar2
+    - message.seminar3
     confirm: message.soundsInteresting
   - id: GiveItem
     itemId: idea

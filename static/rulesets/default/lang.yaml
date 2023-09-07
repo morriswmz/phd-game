@@ -61,7 +61,7 @@ message.recoveredAfterBreak: Your advisor approved your request and you took a b
 message.noBreak: I am fine.
 message.exhaustionIgnored: You felt that you should carry on your research.
 message.exhaustionBadMonth: You found it difficult to concentrate on your research. You felt that your mind is clogged and you need some distractions.
-message.exhaustionNoProgress: You forced yourself to focus. However, it did not help much. You did not make good progress this month.
+message.exhaustionNoProgress: You forced yourself to focus. However, it did not help much. You did not make any good progress this month.
 # late year anxiety
 message.lateYearAnxiety: Three years passed. You have witnessed many graduations. You began to worry about whether your can graduation on time.
 # funding
@@ -107,18 +107,23 @@ message.wrongFigure: You obtained some contradicting results. Something went wro
 message.workOnPaper: Work on a draft paper.
 message.draftPaperComplete: You completed your draft paper and submitted it!
 message.draftPaperIncomplete1: Your advisor was too busy to go through the draft paper with you last month.
-message.draftPaperIncomplete2: Despite your effort, you did not complete your draft paper. You need to add more details to the background section.
-message.draftPaperIncomplete3: Despite your effort, you did not complete your draft paper. You need to add more details to the result section.
+message.draftPaperIncomplete2: Despite your efforts, you did not complete your draft paper. You need to add more details to the background section.
+message.draftPaperIncomplete3: Despite your efforts, you did not complete your draft paper. You need to add more details to the result section.
+message.draftPaperIncomplete4: Despite your efforts, you did not complete your draft paper after spending too much time positioning figures in LaTeX.
+message.draftPaperIncomplete5: Despite your efforts, you did not complete your draft paper. There are still one or two pages to write.
+message.draftPaperIncomplete6: Your advisor went through the latest draft paper and suggested rewriting the abstract in a better way.
+message.draftPaperIncomplete7: Your advisor went through the latest draft paper and pointed out several issues with the figures. You will need more time to fix them.
 message.paperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
-message.paperRejected1: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers though the proposed approach is not novel enough."
+message.paperRejected1: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers thought the proposed approach is not novel enough."
 message.paperRejected2: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers pointed out a problem in the derivation of the main conclusion."
 message.paperRejected3: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers commented that the figures are not convincing."
-message.paperRejected4: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers pointed out that there is no comparison with state-of-art method."
+message.paperRejected4: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers pointed out that there is no comparison with state-of-art methods."
 message.paperRejected5: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers commented that the main conclusion is not intuitive and poorly explained."
 message.paperRejected6: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers found your manuscript very difficult to read."
 message.paperRejected7: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers pointed out that your assumptions are unrealistic in practice."
 message.paperRejected8: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers commented that your contributions are not significant enough."
-message.paperRejected9: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers questioned your experiment setup and requested you conduct additional experiments."
+message.paperRejected9: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers questioned your experiment setup and requested that you should conduct additional experiments."
+message.paperRejected10: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers cite a lack of references to latest research papers."
 message.revisePaper: Revise and resubmit a rejected paper.
 message.revisionComplete: Following the reviewers' comments, you finished rewriting this rejected paper and resubmitted it.
 message.resubmittedPaperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
@@ -140,11 +145,13 @@ message.figureInvalid: Upon checking your recent experiment results, you noticed
 # equipment event
 message.equipmentBroken: Lab equipment broken by new students.
 message.doNothing: Do nothing.
-message.cannotUseEquipment: You cannot use lab equipment to verify your results next month. That sucks.
+message.cannotUseEquipment: You cannot use the lab equipment to verify your results next month. That sucks.
 message.fixEquipment: Try to fix it.
-message.equipmentFixed: It is working. Praise the magic of engineering.
+message.contactEquipmentSupport: Contact technical support!
+message.equipmentFixed: Your fix worked! Praise the magic of engineering.
 message.equipmentNotFixed: You tried to fix it. However, it is still not working.
-message.equipmentFixed2: Tech support arrived and fixed the lab equipment.
+message.equipmentFixedByTechSupport: Technicians arrived and fixed the lab equipment.
+message.equipmentNotFixedByTechSupport: Technicians arrived and tried to fix the lab equipment. However the issue turned out to be more complicated than expected, and they needed more time to fix it.
 message.newEquipment: Your advisor **upgraded the old lab equipment**. Everyone was excited.
 message.cloudStorage: "UNIVERSITY NEWS: free cloud storage now available to all students and faculties. Your data are now safe on the cloud."
 # conference event
@@ -171,7 +178,8 @@ message.rejectedPaperAdvisor: Your advisor sent you an email regarding the rejec
 # misc events
 message.paperCited: Your recent paper got more citations. You feel recognized.
 message.seminar1: You attended a seminar related to your research this month. The speaker's slides were very inspiring and you gained **a new idea**.
-message.seminar2: A distinguished lecturer gave a inspiring talk in this week's seminar. You suddenly came up with **a new idea**.
+message.seminar2: You attended a seminar related to your research this month. The Q&A session was very inspiring and you gained **a new idea**.
+message.seminar3: A distinguished lecturer gave a inspiring talk in this week's seminar. You suddenly came up with **a new idea**.
 message.showerIdea: You found the missing piece during a shower. You develop one of your preliminary results into a **major result**.
 message.randomHope1: The city museum is hosting a special exhibition this month. You paid a visit and it was a great experience. You feel relieved.
 message.randomHope2: There was an open concert near the campus. You spent some time enjoying the music and felt relieved.
