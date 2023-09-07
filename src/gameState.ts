@@ -79,7 +79,7 @@ export class GameState {
         let oldValue = this._variables[varName];
         this._variables[varName] = value;
         if (oldValue !== value) {
-            setImmediate(() => this.dispatchChangeEvent(new VariableChangedEvent(false, varName, oldValue, value)));
+            setTimeout(() => this.dispatchChangeEvent(new VariableChangedEvent(false, varName, oldValue, value)), 0);
         }
     }
 

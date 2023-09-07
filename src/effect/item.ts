@@ -1,6 +1,6 @@
 import { EffectProvider, EffectProviderCollection, Modifier, EffectProviderRegistry, EffectCollection, loadEffectCollectionFromJSON } from './effect';
 import { downloadAndParse } from '../utils/network';
-import { safeLoad } from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 
 export class Item implements EffectProvider {
 
@@ -40,7 +40,7 @@ export class Item implements EffectProvider {
 export class ItemRegistry extends EffectProviderRegistry<Item> {
 
     async loadItems(url: string): Promise<void> {
-        let obj: any = await downloadAndParse(url, safeLoad);
+        let obj: any = await downloadAndParse(url, loadYaml);
         if (!obj) return;
         if (!Array.isArray(obj['items'])) {
             throw new Error('Expecting an array of item definitions.');
@@ -57,7 +57,7 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
                 effects = {};
             }
             let rarity = typeof itemDef['rarity'] === 'number' ? itemDef['rarity'] : 0;
-            let icon = typeof itemDef['icon'] === 'string' ? itemDef['icon'] : 0;
+            let icon = typeof itemDef['icon'] === 'string' ? itemDef['icon'] : '';
             this.add(new Item(itemDef['id'], rarity, icon, effects));
         }
     }

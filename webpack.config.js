@@ -1,5 +1,5 @@
-const CopyWebpackPlugin = require('copy-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
+const TerserPlugin = require("terser-webpack-plugin");
 const path = require('path');
 
 module.exports = {
@@ -17,17 +17,22 @@ module.exports = {
         rules: [
             {
                 test: /\.ts$/,
-                loader: "awesome-typescript-loader"
+                loader: "ts-loader",
+                exclude: /node_modules/,
             }
         ]
     },
+    optimization: {
+        minimize: true,
+        minimizer: [new TerserPlugin()],
+    },
     plugins: [
-        new CopyWebpackPlugin([{
-            from: path.join(__dirname, 'static'),
-            to: path.join(__dirname, 'dist')
-        }]),
-        new UglifyJsPlugin({
-            sourceMap: true
+        new CopyPlugin({
+            patterns: [{
+                from: path.join(__dirname, 'static'),
+                to: path.join(__dirname, 'dist')
+            }],
         })
-    ]
+    ],
+    stats: 'verbose'
 };

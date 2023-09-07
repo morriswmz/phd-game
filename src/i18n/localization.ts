@@ -1,5 +1,5 @@
 import { downloadAndParse } from "../utils/network";
-import { safeLoad } from "js-yaml";
+import { load as loadYaml } from "js-yaml";
 
 export class LocalizationDictionary {
     
@@ -14,7 +14,7 @@ export class LocalizationDictionary {
     }
 
     async loadFrom(url: string): Promise<void> {
-        let obj = await downloadAndParse(url, safeLoad);
+        let obj = await downloadAndParse(url, loadYaml);
         if (obj) {
             Object.assign(this._dict, obj);
         }

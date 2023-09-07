@@ -2,7 +2,7 @@ import { EventConditionFactory } from './conditions';
 import { EventActionFactory } from './actions';
 import { GameEvent } from './core';
 import { downloadAndParse } from '../utils/network';
-import { safeLoad } from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 
 export class GameEventLoader {
@@ -22,7 +22,7 @@ export class GameEventLoader {
     }
 
     loadFromString(s: string): GameEvent[] {
-        return this.parseEvents(safeLoad(s) || {});
+        return this.parseEvents(loadYaml(s) || {});
     }
 
     parseEvents(obj: any): GameEvent[] {

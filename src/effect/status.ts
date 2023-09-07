@@ -1,5 +1,5 @@
 import { EffectProvider, EffectCollection, EffectProviderCollection, EffectProviderRegistry, loadEffectCollectionFromJSON, EffectProviderCollectionChangedEvent } from './effect';
-import { safeLoad } from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 import { downloadAndParse } from '../utils/network';
 
 export class Status implements EffectProvider {
@@ -40,7 +40,7 @@ export class Status implements EffectProvider {
 export class StatusRegistry extends EffectProviderRegistry<Status> {
     
     async loadStatus(url: string): Promise<void> {
-        let obj: any = await downloadAndParse(url, safeLoad);
+        let obj: any = await downloadAndParse(url, loadYaml);
         if (!obj) return;
         if (!Array.isArray(obj['status'])) {
             throw new Error('Expecting an array of status definitions.');
@@ -57,7 +57,7 @@ export class StatusRegistry extends EffectProviderRegistry<Status> {
                 effects = {};
             }
             let duration = typeof statusDef['duration'] === 'number' ? statusDef['duration'] : Infinity;
-            let icon = typeof statusDef['icon'] === 'string' ? statusDef['icon'] : 0;
+            let icon = typeof statusDef['icon'] === 'string' ? statusDef['icon'] : '';
             this.add(new Status(statusDef['id'], duration, icon, effects));
         }
     }
