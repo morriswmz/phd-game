@@ -337,7 +337,7 @@ export class EACoinFlip extends EventAction {
 
 }
 
-export class EASwtich extends EventAction {
+export class EASwitch extends EventAction {
 
     constructor(private _conditions: CompiledEventExpression[], private _actions: EventAction[][]) {
         super();
@@ -365,7 +365,7 @@ export class EASwtich extends EventAction {
      * @param af 
      * @param ec 
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASwtich {
+    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASwitch {
         const branches = obj['branches'];
         if (!Array.isArray(branches)) throw new Error('Expecting an array of branches.');
         let conditions: CompiledEventExpression[] = [];
@@ -380,7 +380,7 @@ export class EASwtich extends EventAction {
             if (!Array.isArray(branch['actions'])) throw new Error('Missing actions.');
             actions.push(af.fromJSONArray(branch['actions']));
         }
-        return new EASwtich(conditions, actions);
+        return new EASwitch(conditions, actions);
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {

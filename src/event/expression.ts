@@ -16,11 +16,11 @@ export interface EventExpressionFunctionTable extends FunctionTable {
      */
     setVarLimits(varName: string, lb: number, ub: number): void;
     /**
-     * Retrives the upper bound of a game variable.
+     * Retrieves the upper bound of a game variable.
      */
     upperBound(varName: string): number;
     /**
-     * Retrives the lower bound of a game variable.  
+     * Retrieves the lower bound of a game variable.  
      */  
     lowerBound(varName: string): number;
     /**

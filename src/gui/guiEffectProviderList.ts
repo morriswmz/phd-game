@@ -32,7 +32,7 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
         this._listContainer.onclick = e => {
             let target = e.target;
             if (target instanceof HTMLLIElement && this.onItemClicked) {
-                this.onItemClicked(this.retriveEffectProviderFromElement(target));
+                this.onItemClicked(this.retrieveEffectProviderFromElement(target));
             } 
         };
     }
@@ -54,7 +54,7 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
      * Retrieves the effect provider instance based on the given HTML li element.
      * @param el HTML li element.
      */
-    abstract retriveEffectProviderFromElement(el: HTMLElement): T;
+    abstract retrieveEffectProviderFromElement(el: HTMLElement): T;
 
 }
 
@@ -80,7 +80,7 @@ export class GuiItemList extends GuiEffectProviderList<Item> {
         }
     }
 
-    retriveEffectProviderFromElement(el: HTMLElement): Item {
+    retrieveEffectProviderFromElement(el: HTMLElement): Item {
         return this._registry.get(el.getAttribute('data-item-id') || '');
     }
 
@@ -100,7 +100,7 @@ export class GuiStatusList extends GuiEffectProviderList<Status> {
         }
     }
 
-    retriveEffectProviderFromElement(el: HTMLElement): Status {
+    retrieveEffectProviderFromElement(el: HTMLElement): Status {
         return this._registry.get(el.getAttribute('data-status-id') || '');
     }
 
