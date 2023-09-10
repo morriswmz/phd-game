@@ -39,8 +39,8 @@
       actions:
       - id: EndGame
         message: message.declinedOffer
-        confirm: message.restart
-        winning: false
+        confirm: message.restartNewTimeline
+        winning: true
     confirm: message.excited
 - id: CommonVariableUpdates
   trigger: MonthBegin
@@ -378,7 +378,7 @@
       actions:
         - id: EndGame
           message: message.graduated
-          confirm: message.restart
+          confirm: message.restartNewTimeline
           winning: true
           fx: confetti
     - message: message.prepareQualify

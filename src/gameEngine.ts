@@ -112,11 +112,11 @@ export class GameEngine {
     /**
      * Starts (or restarts) the game.
      */
-    async start(): Promise<void> {
+    async start(newRandomSeed: boolean): Promise<void> {
         if (!this._dataLoaded) {
             await this.loadGameData();
         }
-        this._gameState.reset();
+        this._gameState.reset(newRandomSeed);
         this._gameState.setVar('month', 1);
         this._gameState.setVar('year', 1);
         this._gameState.setVar('player.hope', 50);
@@ -131,9 +131,10 @@ export class GameEngine {
      * Advance one step.
      */
     async step(): Promise<void> {
-        if (this._gameState.endGameState !== EndGameState.None) {
+        let endGameState = this._gameState.endGameState;
+        if (endGameState !== EndGameState.None) {
             // Restart the game
-            await this.start();
+            await this.start(endGameState === EndGameState.Winning);
             return;
         }
         let month = this._gameState.getVar('month', true) + 1;

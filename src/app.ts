@@ -28,7 +28,7 @@ class App {
     async start(): Promise<void> {
         await this._ldict.loadFrom(this._config.languageFileUrl);
         this._gui.updateUIText();
-        await this._gameEngine.start();
+        await this._gameEngine.start(false);
         const gameLoop = () => {
             setTimeout(() => this._gameEngine.step().then(gameLoop), 50);
         };

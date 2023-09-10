@@ -139,16 +139,24 @@ export class GameState {
     }
 
     /**
-     * Resets all internal states for a new game, except the internal states of
-     * the random number generator.
+     * Resets all internal states for a new game.
+     * @param newRandomSeed If true will generate a new random seed and use the
+     * new seed to reset the random number generator. Otherwise the existing
+     * random seed will be used to reset the random number generator.
      */
-    reset(): void {
+    reset(newRandomSeed: boolean): void {
         this.playerInventory.clear();
         this.playerStatus.clear();
         this._occurredEvents = {};
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
+        if (newRandomSeed) {
+            this._randomSeed = Math.random().toString().substring(2);
+        }
+        this._random = seedrandom.alea(this._randomSeed, {
+            state: true
+        });
     }
 
     protected dispatchChangeEvent(event: VariableChangedEvent) {

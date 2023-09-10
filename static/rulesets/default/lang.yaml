@@ -78,7 +78,7 @@ message.beginning: Congratulations. You have been **admitted** as a new PhD stud
 message.acceptOffer: Accept the offer.
 message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **3 journal papers** to qualify your degree.
 message.declineOffer: Decline the offer.
-message.declinedOffer: You changed your mind and **declined the offer**.
+message.declinedOffer: You changed your mind and **declined the offer**. Perhaps it is a better choice in this timeline.
 message.newMonth: A new month begins. Let us check the to-do list.
 message.readPapers: Read some papers.
 message.gainNewIdea1: After digging into piles of papers, you suddenly gained a **new idea**.
@@ -203,4 +203,5 @@ message.party: Let us have a party to celebrate it.
 message.soundsInteresting: Sounds interesting.
 message.unfortunate: That is unfortunate.
 message.restart: Let us travel back in time and start again.
+message.restartNewTimeline: Let us travel to a different timeline and start again.
 message.hopeAccepted: Hope it will be accepted this time.
