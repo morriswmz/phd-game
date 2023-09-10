@@ -138,7 +138,7 @@ export class EADisplayRandomMessage extends EventAction {
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        const msgId = Math.floor(Math.random() * this._messages.length);
+        const msgId = Math.floor(gs.nextRandomNumber() * this._messages.length);
         await ap.displayMessage(this._messages[msgId], this._confirm, this._icon);
     }
 
@@ -273,7 +273,8 @@ export class EARandom extends EventAction {
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        let idx = weightedSample(this._weightExprs.map(item => ee.eval(item)));
+        let idx = weightedSample(this._weightExprs.map(item => ee.eval(item)),
+                                 () => gs.nextRandomNumber());
         for (let a of this._actions[idx]) {
             await a.execute(gs, ap, ee);
         }
@@ -323,7 +324,7 @@ export class EACoinFlip extends EventAction {
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         let p = ee.eval(this._p);
         if (p < 0) p = 0;
-        let coinFlip = Math.random();
+        let coinFlip = gs.nextRandomNumber();
         if (coinFlip < p) {
             for (let a of this._successActions) {
                 await a.execute(gs, ap, ee);

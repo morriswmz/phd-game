@@ -76,8 +76,8 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
                 return (base + eItem[0] + eStatus[0]) * eItem[1] * eStatus[1];
             },
             hasStatus: id => this._gameState.playerStatus.count(id) > 0,
-            random: Math.random,
-            randi: x => Math.floor(Math.random()),
+            random: () => this._gameState.nextRandomNumber(),
+            randi: x => Math.floor(this._gameState.nextRandomNumber()),
             max: Math.max,
             min: Math.min,
             floor: Math.floor,

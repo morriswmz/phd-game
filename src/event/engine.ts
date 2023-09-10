@@ -78,7 +78,7 @@ export class GameEventEngine {
             if (skip) continue;
             // Randomness
             const p = typeof e.probability === 'number' ? e.probability : this._exprEngine.eval(e.probability);
-            if (Math.random() > p) continue;
+            if (this._gameState.nextRandomNumber() > p) continue;
             // Add exclusions
             for (let ex of e.exclusions) {
                 exclusions[ex] = true;

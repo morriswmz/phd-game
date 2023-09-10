@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.5",
-    "js-yaml": "^4.1.0"
+    "@types/seedrandom": "^3.0.5",
+    "js-yaml": "^4.1.0",
+    "seedrandom": "^3.0.5"
   }
 }

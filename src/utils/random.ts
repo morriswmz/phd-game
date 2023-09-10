@@ -2,7 +2,8 @@
  * Samples a integer from [0, w.length) according to the weights defined by w.
  * @param w Array of weights.
  */
-export function weightedSample(w: ArrayLike<number>): number {
+export function weightedSample(w: ArrayLike<number>,
+                               random: () => number): number {
     if (w.length === 0) throw new Error('Must have at least one weight value.');
     let cw: number[] = new Array(w.length + 1);
     let sum = 0;
@@ -14,7 +15,7 @@ export function weightedSample(w: ArrayLike<number>): number {
     }
     cw[cw.length - 1] = sum;
     if (sum === 0) throw new Error('Sum of weights must be positive.');
-    let p = Math.random() * sum;
+    let p = random() * sum;
     // Should use binary search here!
     let idx = 0;
     for (;idx < w.length;idx++) {

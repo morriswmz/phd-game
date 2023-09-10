@@ -1,3 +1,5 @@
+import * as seedrandom from 'seedrandom';
+
 import { JSONSerializable } from './utils/jsonSerializable';
 import { Inventory, ItemRegistry } from './effect/item';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -34,15 +36,26 @@ export class GameState {
     private _playerStatus: StatusTable;
     private _variables: { [key: string]: number } = {};
     private _varLimits: { [key: string]: [number, number] } = {};
+    private _randomSeed: string;
+    private _random: seedrandom.StatefulPRNG<seedrandom.State.Alea>;
 
     // Public variables
     endGameState: EndGameState = EndGameState.None;
     // event handlers
     onVariableChanged: VariableChangeHandler | undefined;
 
-    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry) {
+    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry,
+                randomSeed?: number) {
         this._playerInventory = new Inventory(itemRegistry);
         this._playerStatus = new StatusTable(statusRegistry);
+        if (randomSeed) {
+            this._randomSeed = randomSeed.toString();
+        } else {
+            this._randomSeed = Math.random().toString().substring(2);
+        }
+        this._random = seedrandom.alea(this._randomSeed, {
+            state: true
+        });
     }
 
     get playerInventory(): Inventory {
@@ -55,6 +68,14 @@ export class GameState {
 
     get occurredEvents(): { [key: string]: number; } {
         return this._occurredEvents;
+    }
+
+    get randomSeed(): string {
+        return this._randomSeed;
+    }
+
+    nextRandomNumber(): number {
+        return this._random();
     }
 
     /**
@@ -117,6 +138,10 @@ export class GameState {
         return value;
     }
 
+    /**
+     * Resets all internal states for a new game, except the internal states of
+     * the random number generator.
+     */
     reset(): void {
         this.playerInventory.clear();
         this.playerStatus.clear();
