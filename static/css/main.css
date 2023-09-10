@@ -19,6 +19,9 @@ body {
 h1, h2, h3, h4, h5 {
     font-weight: normal;
 }
+code {
+    font-family: 'Press Start 2P', cursive, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Microsoft YaHei';
+}
 a, a:hover, a:active, a:link {
     text-decoration: none;
 }
@@ -145,10 +148,12 @@ em {
     background: #fff4e1;
     padding: 0.5em;
     margin: 0 auto;
-    width: 400px;
+    width: 80%;
+    max-width: 600px;
     min-height: 200px;
     box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
     text-align: center;
+    word-break: break-word;
 }
 
 footer {
@@ -186,7 +191,6 @@ footer a:link {
         font-size: 0.7em;
     }
     .modal_content {
-        width: 320px;
         min-height: 180px;
     }
 }

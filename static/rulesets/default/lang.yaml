@@ -6,6 +6,8 @@ ui.privacyNoticeTitle: Privacy Notice
 ui.privacyNoticeContent: This webpage is hosted under research.wmz.ninja, which uses Google Analytics (which uses cookies) to collect basic anonymous data for website statistics. You are free to disable cookies or enable Do Not Track.
 ui.helpTitle: Help
 ui.helpContent: Simply make your choice at the beginning of each month. All outcomes are determined by the random number generator. Do not take them seriously. **Sometimes the RNG can be brutal.**
+ui.seedTitle: Seed
+ui.seedContent: "The seed for the current timeline is **{{@seed}}**. Shareable link: **``{{@seedUrl}}``**"
 ui.hopeMeter: Hope {{player.hope}}/100
 ui.timeMeter: Year {{year}} Month {{month}}
 

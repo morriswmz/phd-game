@@ -7,10 +7,15 @@ export interface GameTextEngine {
      * Renders the source text into HTML text.
      * Pipeline: original string -> variable interpolation + styling
      * Formats:
-     * - {{varName:ndigits}} variable interpolation, number of digits is optional.
-     * - __text__ underline
-     * - **text** emphasize
-     * - ##text## strong
+     * * {{varName:ndigits}} Game state variable interpolation, number of
+     *                       digits is optional.
+     * * {{@specialVarName}} Special variable interpolation. See
+     *                       `_evalSpecialVariable()` for more details.
+     * * __text__ underline
+     * * **text** emphasize
+     * * ##text## strong
+     * * ``text`` vertabim, no additional style modifier allowed inside.
+     *            Variable interpolation still applies inside.
      * For example, if player.hope is 50, then "Hope: <**{{player.hope}}**>" will be
      * converted to "Hope: &lt;<em>50</em>&gt;".
      * @param src Source text.
@@ -38,8 +43,13 @@ export class SimpleGameTextEngine implements GameTextEngine {
 
     render(src: string): string {
         // Step 1: interpolate
-        src = src.replace(/\{\{([a-z0-9$_.]+)(:\d+)?\}\}/gi, (match, p1, p2) => {
-            if (isVariableName(p1)) {
+        src = src.replace(/\{\{(@?[a-z0-9$_.]+)(:\d+)?\}\}/gi, (match, p1, p2) => {
+            if (p1[0] === '@') {
+                // Special variables
+                let specialVarName = p1.substring(1);
+                return this._evalSpecialVariable(specialVarName) || match;
+            } else if (isVariableName(p1)) {
+                // Game state variables
                 let val = this._gs.getVar(p1, false);
                 if (val == undefined) {
                     return match;
@@ -66,12 +76,30 @@ export class SimpleGameTextEngine implements GameTextEngine {
     localize(src: string): string {
         return this._ldict.translate(src);
     }
+
+    private _evalSpecialVariable(varName: string): string | undefined {
+        if (!isVariableName(varName)) {
+            return undefined;
+        }
+        switch (varName) {
+            case 'seed':
+                return this._gs.randomSeed;
+            case 'seedUrl':
+                let path = window.location.protocol + '//' + 
+                           window.location.host + window.location.pathname;
+                let encodedSeed = encodeURIComponent(this._gs.randomSeed)
+                return `${path}#init_seed=${encodedSeed}`;
+            default:
+                return undefined;
+        }
+    }
 }
 
 const TextStyleMarkupMap: { [key: string]: [string, string]; } = {
     '*': ['<em>', '</em>'],
     '#': ['<strong>', '</strong>'],
-    '_': ['<span style="text-decoration: underline">', '</span>']
+    '_': ['<span style="text-decoration: underline">', '</span>'],
+    '`': ['<code>', '</code>']
 };
 
 function escapeHTML(s: string): string {
@@ -89,23 +117,30 @@ function renderWithStyle(s: string): string {
             ++idx;   
             continue;
         }
-        // Must repeat once
+        // Must repeat once and not inside a code block
         let curChar = s[idx];
         if (idx + 1 < s.length && s[idx + 1] === curChar) {
             if (idx > lastIdx) {
                 result += s.substring(lastIdx, idx);
             }
+            let markupConsumed = false;
             if (stack.length > 0 && curChar === stack[stack.length - 1]) {
                 // Closing
                 stack.pop();
                 result += TextStyleMarkupMap[curChar][1];
-            } else {
+                markupConsumed = true;
+            } else if (stack.length === 0 || stack[stack.length - 1] !== '`') {
                 // Opening
                 stack.push(s[idx]);
-                result += TextStyleMarkupMap[curChar][0];                
+                result += TextStyleMarkupMap[curChar][0];
+                markupConsumed = true;
             }
             idx += 2;
-            lastIdx = idx;
+            if (markupConsumed) {
+                lastIdx = idx;
+            }
+        } else {
+            ++idx;
         }
     }
     // Last segment.

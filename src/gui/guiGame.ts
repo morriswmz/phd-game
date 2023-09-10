@@ -29,6 +29,7 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
     private _btnHelp: HTMLAnchorElement;
+    private _btnSeed: HTMLAnchorElement;
     private _btnPrivacyNotice: HTMLAnchorElement;
 
     private _gameEngine: GameEngine;
@@ -53,6 +54,7 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
         this._btnHelp = this.retrieveElement('btn_help');
+        this._btnSeed = this.retrieveElement('btn_seed');
         this._btnPrivacyNotice = this.retrieveElement('btn_privacy_notice');
         // Handlers for game state updates.
         this._gameEngine.gameState.onVariableChanged = (gs, e) => {
@@ -87,6 +89,13 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             this._modalBox.display(
                 'ui.privacyNoticeTitle',
                 'ui.privacyNoticeContent',
+                'ui.ok'
+            );
+        };
+        this._btnSeed.onclick = e => {
+            this._modalBox.display(
+                'ui.seedTitle',
+                'ui.seedContent',
                 'ui.ok'
             );
         };
