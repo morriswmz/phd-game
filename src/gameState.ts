@@ -45,11 +45,11 @@ export class GameState {
     onVariableChanged: VariableChangeHandler | undefined;
 
     constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry,
-                randomSeed?: number) {
+                randomSeed?: string) {
         this._playerInventory = new Inventory(itemRegistry);
         this._playerStatus = new StatusTable(statusRegistry);
         if (randomSeed) {
-            this._randomSeed = randomSeed.toString();
+            this._randomSeed = randomSeed;
         } else {
             this._randomSeed = Math.random().toString().substring(2);
         }

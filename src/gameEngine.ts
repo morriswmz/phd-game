@@ -10,6 +10,7 @@ import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
 
 export interface GameConfig {
+    initialRandomSeed?: string;
     itemDefinitionUrl: string;
     statusDefinitionUrl: string;
     eventDefinitionUrl: string;
@@ -38,7 +39,9 @@ export class GameEngine {
         this._actionProxy = ap;
         this._itemRegistry = new ItemRegistry();
         this._statusRegistry = new StatusRegistry();
-        this._gameState = new GameState(this._itemRegistry, this._statusRegistry);
+        this._gameState = new GameState(this._itemRegistry,
+                                        this._statusRegistry,
+                                        this._config.initialRandomSeed);
         this._expressionEngine = new EventExpressionEngine(this._gameState);
         this._eventEngine = new GameEventEngine(this._gameState, this._actionProxy, this._expressionEngine);
         this._actionFactory = new EventActionFactory(this._expressionEngine);

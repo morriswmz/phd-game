@@ -2,6 +2,7 @@ import { GuiGameWindow } from './gui/guiGame';
 import { LocalizationDictionary } from './i18n/localization';
 import { GameEngine, GameConfig, GameActionProxy } from './gameEngine';
 import { SimpleGameTextEngine } from './gui/textEngine';
+import queryString from 'query-string';
 
 interface AppConfig extends GameConfig {
     languageFileUrl: string;
@@ -35,7 +36,11 @@ class App {
     }
 }
 
+let parsedHash = queryString.parse(window.location.hash || '');
+let seed = parsedHash['init_seed'];
+
 const app = new App(document.body, {
+    initialRandomSeed: typeof seed === 'string' ? seed : undefined,
     languageFileUrl: 'rulesets/default/lang.yaml',
     itemDefinitionUrl: 'rulesets/default/items.yaml',
     statusDefinitionUrl: 'rulesets/default/status.yaml',
