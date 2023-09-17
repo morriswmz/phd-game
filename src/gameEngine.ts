@@ -11,9 +11,9 @@ import { StatusTable, StatusRegistry } from './effect/status';
 
 export interface GameConfig {
     initialRandomSeed?: string;
-    itemDefinitionUrl: string;
-    statusDefinitionUrl: string;
-    eventDefinitionUrl: string;
+    itemDefinitionUrl?: string;
+    statusDefinitionUrl?: string;
+    eventDefinitionUrl?: string;
 }
 
 /**
@@ -82,11 +82,27 @@ export class GameEngine {
     async loadGameData(): Promise<void> {
         if (this._dataLoaded) return;
         this._initFactories();
-        await this._itemRegistry.loadItems(this._config.itemDefinitionUrl);
-        await this._statusRegistry.loadStatus(this._config.statusDefinitionUrl);
-        const eventLoader = new GameEventLoader(this._expressionEngine, this._conditionFactory, this._actionFactory);
-        const events = await eventLoader.load(this._config.eventDefinitionUrl);
-        this._eventEngine.registerEvents(events);
+        if (this._config.itemDefinitionUrl) {
+            await this._itemRegistry.loadItems(this._config.itemDefinitionUrl);
+        } else {
+            console.warn('Missing item definitions. No items loaded.');
+        }
+        if (this._config.statusDefinitionUrl) {
+            await this._statusRegistry.loadStatus(
+                this._config.statusDefinitionUrl);
+        } else {
+            console.warn('Missing status definitions. No status loaded.');
+        }
+        const eventLoader = new GameEventLoader(this._expressionEngine,
+                                                this._conditionFactory,
+                                                this._actionFactory);
+        if (this._config.eventDefinitionUrl) {
+            const events = await eventLoader.load(
+                this._config.eventDefinitionUrl);
+            this._eventEngine.registerEvents(events);
+        } else {
+            console.warn('Missing event definitions. No events loaded.');
+        }
         this._dataLoaded = true;
     }
 

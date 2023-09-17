@@ -5,7 +5,7 @@ import { SimpleGameTextEngine } from './gui/textEngine';
 import queryString from 'query-string';
 
 interface AppConfig extends GameConfig {
-    languageFileUrl: string;
+    languageFileUrl?: string;
 }
 
 class App {
@@ -26,7 +26,11 @@ class App {
     }
 
     async start(): Promise<void> {
-        await this._ldict.loadFrom(this._config.languageFileUrl);
+        if (this._config.languageFileUrl) {
+            await this._ldict.loadFrom(this._config.languageFileUrl);
+        } else {
+            console.warn('Missing language file!');
+        }
         this._gui.updateUIText();
         await this._gameEngine.start(false);
         const gameLoop = () => {
@@ -36,16 +40,18 @@ class App {
     }
 }
 
+let appConfig: AppConfig = {};
+let appConfigJson = document.getElementById('app_config')?.textContent;
+if (appConfigJson) {
+    appConfig = {...JSON.parse(appConfigJson)};
+}
 let parsedHash = queryString.parse(window.location.hash || '');
 let seed = parsedHash['init_seed'];
+if (typeof seed === 'string') {
+    appConfig['initialRandomSeed'] = seed;
+}
 
-const app = new App(document.body, {
-    initialRandomSeed: typeof seed === 'string' ? seed : undefined,
-    languageFileUrl: 'rulesets/default/lang.yaml',
-    itemDefinitionUrl: 'rulesets/default/items.yaml',
-    statusDefinitionUrl: 'rulesets/default/status.yaml',
-    eventDefinitionUrl: 'rulesets/default/events.yaml'
-});
+const app = new App(document.body, appConfig);
 app.start().then(() => {
     console.log('App started successfully.');
 });
