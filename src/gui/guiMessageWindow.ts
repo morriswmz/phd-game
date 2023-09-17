@@ -82,16 +82,23 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
             this._messageContainer.appendChild(pText);
             let segments = this._textEngine.localize(message).split(' ');
             let curText = '';
-            let idx = 0;
-            let t = 0;
-            let callback = () => {
-                ++t;
-                if (t < 2) {
-                    requestAnimationFrame(callback);
-                    return;
+            let lastStep = 0;
+            let startingTimestamp : number | null = null;
+            let callback: FrameRequestCallback = (timeStamp) => {
+                if (!startingTimestamp) {
+                    startingTimestamp = timeStamp;
                 }
-                t = 0;
-                if (idx == segments.length) {
+                const elapsedTime = timeStamp - startingTimestamp;
+                // 30 FPS
+                const steps = Math.min(elapsedTime / 33.3333, segments.length);
+                while (lastStep < steps) {
+                    // Add next segment.
+                    if (curText.length > 0) curText += ' ';
+                    curText += segments[lastStep];
+                    ++lastStep;
+                }
+                pText.innerHTML = this._textEngine.render(curText);
+                if (lastStep === segments.length) {
                     // Finished!
                     if (icon) {
                         let pIcon = document.createElement('p');
@@ -102,11 +109,6 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
                     }
                     resolve();
                 } else {
-                    // Add next segment.
-                    if (curText.length > 0) curText += ' ';
-                    curText += segments[idx];
-                    pText.innerHTML = this._textEngine.localizeAndRender(curText);
-                    ++idx;
                     requestAnimationFrame(callback);
                 }
             };
