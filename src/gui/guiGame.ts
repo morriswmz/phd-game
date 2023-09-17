@@ -112,8 +112,12 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
     }
 
     updateUIText(): void {
-        this._btnHelp.innerHTML = this._textEngine.localizeAndRender('ui.helpTitle');
-        this._btnPrivacyNotice.innerHTML = this._textEngine.localizeAndRender('ui.privacyNoticeTitle');
+        this._btnHelp.innerHTML =
+            this._textEngine.localizeAndRender('ui.helpButton');
+        this._btnPrivacyNotice.innerHTML =
+            this._textEngine.localizeAndRender('ui.privacyNoticeButton');
+        this._btnSeed.innerHTML =
+            this._textEngine.localizeAndRender('ui.seedButton')
         this._itemList.setTitle('ui.items');
         this._statusList.setTitle('ui.status');        
     }
