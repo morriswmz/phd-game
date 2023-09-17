@@ -1,6 +1,42 @@
 import { GuiBase } from './guiBase';
-import { LocalizationDictionary } from '../i18n/localization';
 import { GameTextEngine } from './textEngine';
+
+// https://en.wikipedia.org/wiki/Unicode_block
+const CJK_SCRIPTS = [
+    "\\p{Script=Han}",
+    "\\p{Script=Bopomofo}",
+    "\\p{Script=Katakana}",
+    "\\p{Script=Hiragana}",
+    "\\p{Script=Hangul}",
+];
+const CJK_REGEXP = new RegExp(`^[${CJK_SCRIPTS.join('')}]\$`, 'u');
+
+function segmentMessage(message: string): string[] {
+    const segments: string[] = [];
+    let idx = 0;
+    let lastIdx = 0;
+    while (idx < message.length) {
+        const currentChar = message[idx];
+        if (currentChar === ' ') {
+            // Consume all white spaces
+            ++idx;
+            while (idx < message.length && message[idx] === ' ');
+            segments.push(message.substring(lastIdx, idx));
+            lastIdx = idx;
+        } else if (CJK_REGEXP.test(currentChar)) {
+            // Currently only support CJK characters
+            ++idx;
+            segments.push(message.substring(lastIdx, idx));
+            lastIdx = idx;
+        } else {
+            ++idx;
+        }
+    }
+    if (lastIdx < idx) {
+        segments.push(message.substring(lastIdx, idx));
+    }
+    return segments;
+}
 
 export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
 
@@ -80,7 +116,7 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
             this.removeAllChildrenOf(this._messageContainer);
             let pText = document.createElement('p');
             this._messageContainer.appendChild(pText);
-            let segments = this._textEngine.localize(message).split(' ');
+            let segments = segmentMessage(this._textEngine.localize(message));
             let curText = '';
             let lastStep = 0;
             let startingTimestamp : number | null = null;
@@ -92,8 +128,6 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
                 // 30 FPS
                 const steps = Math.min(elapsedTime / 33.3333, segments.length);
                 while (lastStep < steps) {
-                    // Add next segment.
-                    if (curText.length > 0) curText += ' ';
                     curText += segments[lastStep];
                     ++lastStep;
                 }
