@@ -33,12 +33,12 @@ class Particle {
         scene.removeChild(this._el);
     }
 
-    updatePosition(): void {
+    updatePosition(stepSize: number): void {
         if (!this.active) return;
-        this.vx += this.ax;
-        this.vy += this.ay;
-        this.x += this.vx;
-        this.y += this.vy;
+        this.vx += this.ax * stepSize;
+        this.vy += this.ay * stepSize;
+        this.x += (this.vx + 0.5 * this.ax * stepSize) * stepSize;
+        this.y += (this.vy + 0.5 * this.ay * stepSize) * stepSize;
         this._el.style.top = this.y + 'px';
         this._el.style.left = this.x + 'px';
     }
@@ -53,22 +53,29 @@ export class GuiFX extends GuiBase<HTMLDivElement> {
         let particles: Particle[] = [];
         let viewPortWidth = this._container.offsetWidth;
         let viewPortHeight = document.body.offsetHeight;
-        let nActive = 30;
+        let nActive = Math.max(30, Math.ceil(viewPortWidth / 20));
+        let lastTimestamp: number | null = null;
         for (let i = 0;i < nActive;i++) {
             let p = new Particle('particle_confetti');
             p.x = Math.random() * viewPortWidth;
-            p.y = - 10 - Math.random() * 160;
-            p.vy = Math.random();
-            p.ay = 9.8 / 60;
+            p.y = - 10 - Math.random() * 300;
+            p.vy = Math.random() * 2;
+            p.ay = 8 / 60;
             p.element.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
             p.element.style.width = Math.floor(Math.random() * 6 + 4) + 'px';
             p.element.style.height = p.element.style.width;
             p.addToScene(this._container);
             particles.push(p);
         }
-        const animate = () => {
+        const animate: FrameRequestCallback = (timestamp) => {
+            if (!lastTimestamp) {
+                lastTimestamp = timestamp;
+            }
+            // 60 UPS
+            let stepSize = (timestamp - lastTimestamp) / (1000 / 60);
+            lastTimestamp = timestamp;
             for (let p of particles) {
-                p.updatePosition();
+                p.updatePosition(stepSize);
                 if (p.active && p.y > viewPortHeight * 1.5) {
                     p.active = false;
                     p.removeFromScene(this._container);

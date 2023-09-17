@@ -120,11 +120,11 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
             let curText = '';
             let lastStep = 0;
             let startingTimestamp : number | null = null;
-            let callback: FrameRequestCallback = (timeStamp) => {
+            let callback: FrameRequestCallback = (timestamp) => {
                 if (!startingTimestamp) {
-                    startingTimestamp = timeStamp;
+                    startingTimestamp = timestamp;
                 }
-                const elapsedTime = timeStamp - startingTimestamp;
+                const elapsedTime = timestamp - startingTimestamp;
                 // 30 FPS
                 const steps = Math.min(elapsedTime / 33.3333, segments.length);
                 while (lastStep < steps) {
