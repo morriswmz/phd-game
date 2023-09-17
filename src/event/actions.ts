@@ -68,7 +68,19 @@ export class EALog extends EventAction {
     
     static ID = 'Log';
     
-    static fromJSONObject(obj: any, af: EventActionFactory): EALog {
+    /**
+     * Creates an `EALog` instance from it JSON definition stored in the given
+     * JSON object.
+     * @param obj Schema:
+     *     ```
+     *     {
+     *         "id": "Log",
+     *         "message": string
+     *     }
+     *     ```
+     * @param af Not used.
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EALog {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         return new EALog(obj['message']);
     }
@@ -83,7 +95,7 @@ export class EALog extends EventAction {
 }
 
 /**
- * Displays a message.
+ * Displays one message.
  */
 export class EADisplayMessage extends EventAction {
 
@@ -93,6 +105,20 @@ export class EADisplayMessage extends EventAction {
 
     static ID = 'DisplayMessage';
 
+    /**
+     * Creates an `EADisplayMessage` instance from it JSON definition stored in
+     * the given JSON object.
+     * @param obj Schema:
+     *  ```
+     *  {
+     *      "id": "DisplayMessage",
+     *      "message": string,
+     *      "confirm": string
+     *  }
+     *  ```
+     * @param af Not used.
+     * @param ec Not used.
+     */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayMessage {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         if (obj['confirm'] == undefined) throw new Error('Confirm message missing.');
@@ -106,7 +132,7 @@ export class EADisplayMessage extends EventAction {
 }
 
 /**
- * Display a message randomly selected from the predefined messages.
+ * Display a message randomly selected from a list of predefined messages.
  */
 export class EADisplayRandomMessage extends EventAction {
 
@@ -117,8 +143,8 @@ export class EADisplayRandomMessage extends EventAction {
     static ID = 'DisplayRandomMessage';
 
     /**
-     * Creates an action that displays a random message from a list of
-     * predefined messages.
+     * Creates an `EADisplayRandomMessage` instance from it JSON definition
+     * stored in the given JSON object.
      * @param obj Schema:
      *  ```
      *  {
@@ -128,8 +154,8 @@ export class EADisplayRandomMessage extends EventAction {
      *      "icon": string | undefined
      *  }
      *  ```
-     * @param af 
-     * @param ec 
+     * @param af Not used.
+     * @param ec Not used.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayRandomMessage {
         if (!Array.isArray(obj['messages'])) throw new Error('Messages missing.');
@@ -145,7 +171,9 @@ export class EADisplayRandomMessage extends EventAction {
 }
 
 /**
- * Displays choices.
+ * Displays a message along with multiple choices from which players can select.
+ * Each choice can also optionally execute a list of actions after being
+ * selected.
  */
 export class EADisplayChoices extends EventAction {
 
@@ -162,22 +190,26 @@ export class EADisplayChoices extends EventAction {
     static ID = 'DisplayChoices';
     
     /**
-     * Creates an action that prompts multiple choices.
+     * Creates an `EADisplayChoices` instance from it JSON definition stored in
+     * the given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "DisplayChoices",
-     *      "message": string,
-     *      "choices": [
-     *          {
-     *              "message": string,
-     *              "requirement": string | undefined,
-     *              "actions": EventAction[]
-     *          }
-     *      ]
-     *  }
-     *  ```
-     * @param af Event action factory for creating nested actions.
+     *     ```
+     *     {
+     *         "id": "DisplayChoices",
+     *         "message": string,
+     *         "choices": [
+     *             {
+     *                 "message": string,
+     *                 "requirement": number | string | undefined,
+     *                 "actions": EventAction[] | undefined
+     *             }
+     *         ]
+     *     }
+     *     ```
+     *     The `requirement` is optional and can be an expression.
+     * @param af The event action factory for creating nested actions.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `requirement` field.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayChoices {
         if (obj['message'] == undefined) throw new Error('Message missing.');
@@ -220,7 +252,8 @@ export class EADisplayChoices extends EventAction {
 }
 
 /**
- * Randomly execute a group of actions according to the weights.
+ * Randomly executes one list of actions of a group of action lists according to
+ * the given weights.
  */
 export class EARandom extends EventAction {
 
@@ -239,21 +272,24 @@ export class EARandom extends EventAction {
     static ID = 'Random';
     
     /**
-     * Creates a action that randomly executes one of the action groups.
+     * Creates an `EARandom` instance from it JSON definition stored in the
+     * given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "Random",
-     *      "groups": [
-     *          {
-     *              "weight": number | string,
-     *              "actions": EventAction[]
-     *          }
-     *      ]
-     *  }
-     *  ```
-     * @param af Event action factory for creating nested actions.
-     * @param ec
+     *     ```
+     *     {
+     *         "id": "Random",
+     *         "groups": [
+     *             {
+     *                 "weight": number | string,
+     *                 "actions": EventAction[]
+     *             }
+     *         ]
+     *     }
+     *     ```
+     *     The `weight` field can be an expression.
+     * @param af The event action factory for creating nested actions.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `weight` field.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EARandom {
         if (!Array.isArray(obj['groups'])) throw new Error('Missing group definitions.');
@@ -283,7 +319,9 @@ export class EARandom extends EventAction {
 }
 
 /**
- * Randomly chooses one of the two actions via a coin flip.
+ * Randomly chooses one of the two action lists to execute via a coin flip.
+ * This action is a simplified version of `EARandom` when you only need randomly
+ * pick from two actions.
  */
 export class EACoinFlip extends EventAction {
 
@@ -297,19 +335,20 @@ export class EACoinFlip extends EventAction {
     static ID = 'CoinFlip';
 
     /**
-     * Creates an action that executes one of the two action groups via a coin
-     * flip.
+     * Creates an `EACoinFlip` instance from it JSON definition stored in the
+     * given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "CoinFlip",
-     *      "probability": number | string,
-     *      "success": EventAction[] | undefined,
-     *      "fail": EventAction[] | undefined
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ```
+     *     {
+     *         "id": "CoinFlip",
+     *         "probability": number | string,
+     *         "success": EventAction[] | undefined,
+     *         "fail": EventAction[] | undefined
+     *     }
+     *     ```
+     * @param af The event action factory for creating nested actions.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `probability` field.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EACoinFlip {
         const p = obj['probability'];
@@ -338,6 +377,12 @@ export class EACoinFlip extends EventAction {
 
 }
 
+/**
+ * Given a list of conditions and their associated action lists, evaluates the
+ * conditions in the order they are defined and executes the action list
+ * associated with the first condition that evaluates to true.
+ * This action is similar to a non-fall-through switch statement in JavaScript.
+ */
 export class EASwitch extends EventAction {
 
     constructor(private _conditions: CompiledEventExpression[], private _actions: EventAction[][]) {
@@ -347,24 +392,24 @@ export class EASwitch extends EventAction {
     static ID = 'Switch';
 
     /**
-     * Creates an action that simulates the non-fall-through switch statement.
-     * Each condition will be evaluated sequentially.
-     * If multiple conditions evaluate to true, only the action associated with
-     * the first one will be executed.
+     * Creates an `EASwitch` instance from it JSON definition stored in the
+     * given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "Switch",
-     *      "branches": [
-     *          {
-     *              "condition": string | number,
-     *              "actions": EventAction[]
-     *          }
-     *      ]
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ```
+     *     {
+     *         "id": "Switch",
+     *         "branches": [
+     *             {
+     *                 "condition": string | number,
+     *                 "actions": EventAction[]
+     *             }
+     *         ]
+     *     }
+     *     ```
+     *     Each `condition` can also be an expression.
+     * @param af The event action factory for creating nested actions.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `condition` field.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASwitch {
         const branches = obj['branches'];
@@ -399,7 +444,7 @@ export class EASwitch extends EventAction {
 }
 
 /**
- * Updates a variable.
+ * Updates one game state variables.
  */
 export class EAUpdateVariable extends EventAction {
 
@@ -409,6 +454,22 @@ export class EAUpdateVariable extends EventAction {
 
     static ID = 'UpdateVariable';
     
+    /**
+     * Creates an `EAUpdateVariable` instance from it JSON definition stored in
+     * the given JSON object.
+     * @param obj Schema:
+     *     ```
+     *     {
+     *         "id": "UpdateVariable",
+     *         "variable": string,
+     *         "value": number | string
+     *     }
+     *     ```
+     *     The `value` field can also be an expression.
+     * @param af Not used.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `value` field.
+     */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariable {
         if (!obj['variable']) throw new Error('Missing variable name.');
         if (obj['value'] == undefined) throw new Error('Missing value.');
@@ -420,12 +481,14 @@ export class EAUpdateVariable extends EventAction {
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        // Check operation
         gs.setVar(this._varName, ee.eval(this._updateExpr), false);
     }
 
 }
 
+/**
+ * Updates one or more game state variables.
+ */
 export class EAUpdateVariables extends EventAction {
 
     constructor(private _varNames: string[], private _updateExprs: CompiledEventExpression[]) {
@@ -438,16 +501,18 @@ export class EAUpdateVariables extends EventAction {
     static ID = 'UpdateVariables';
 
     /**
-     * Creates an action that updates multiple variables.
+     * Creates an `EAUpdateVariables` instance from it JSON definition stored in
+     * the given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "UpdateVariables",
-     *      "updates": { [varName: string]: string | number }
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ```
+     *     {
+     *         "id": "UpdateVariables",
+     *         "updates": { [varName: string]: string | number }
+     *     }
+     *     ```
+     * @param af Not used.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `updates` map.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariables {
         if (!obj['updates']) throw new Error('Missing update definitions.');
@@ -468,6 +533,9 @@ export class EAUpdateVariables extends EventAction {
 
 }
 
+/**
+ * Gives the player a certain amount of a certain item.
+ */
 export class EAGiveItem extends EventAction {
 
     constructor(private _itemId: string, private _amountExpr: CompiledEventExpression) {
@@ -476,6 +544,22 @@ export class EAGiveItem extends EventAction {
 
     static ID = 'GiveItem';
 
+    /**
+     * Creates an `EAGiveItem` instance from it JSON definition stored in the
+     * given JSON object.
+     * @param obj Schema:
+     *     ```
+     *     {
+     *         "id": "GiveItem",
+     *         "itemId": string,
+     *         "amount": number | string
+     *     }
+     *     ```
+     *     The `amount` field can also be an expression.
+     * @param af Not used.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `amount` field.
+     */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAGiveItem {
         if (obj['itemId'] == undefined) throw new Error('Missing item id.');
         // We allow amount to be an expression.
@@ -511,16 +595,18 @@ export class EAUpdateItemAmounts extends EventAction {
     static ID = 'UpdateItemAmounts';
 
     /**
-     * Creates an action that updates the amounts of multiple items relatively.
+     * Creates an `EAUpdateItemAmounts` instance from it JSON definition stored
+     * in the given JSON object.
      * @param obj Schema:
-     *  ``
-     *  {
-     *      "id": "UpdateItemAmounts",
-     *      "updates": { [itemId: string]: number | string; }
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ``
+     *     {
+     *         "id": "UpdateItemAmounts",
+     *         "updates": { [itemId: string]: number | string; }
+     *     }
+     *     ```
+     * @param af Not used.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `updates` map.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateItemAmounts {
         if (obj['updates'] == undefined) throw new Error('Missing update definitions.');
@@ -546,6 +632,9 @@ export class EAUpdateItemAmounts extends EventAction {
 
 }
 
+/**
+ * Ends the game.
+ */
 export class EAEndGame extends EventAction {
 
     constructor(private _message: string, private _confirm: string,
@@ -556,19 +645,20 @@ export class EAEndGame extends EventAction {
     static ID = 'EndGame';
 
     /**
-     * Creates an action that ends the game.
+     * Creates an `EAEndGame` instance from it JSON definition stored in the
+     * given JSON object.
      * @param obj Schema:
-     *  ```
-     *  {
-     *      "id": "EndGame",
-     *      "message": string,
-     *      "confirm": string,
-     *      "winning": boolean,
-     *      "fx": string | undefined
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ```
+     *     {
+     *         "id": "EndGame",
+     *         "message": string,
+     *         "confirm": string,
+     *         "winning": boolean,
+     *         "fx": string | undefined
+     *     }
+     *     ```
+     * @param af Not used.
+     * @param ec Not used.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAEndGame {
         if (typeof(obj['message']) !== 'string') throw new Error('Missing message.');
@@ -585,6 +675,9 @@ export class EAEndGame extends EventAction {
 
 }
 
+/**
+ * Sets a status effect on or off.
+ */
 export class EASetStatus extends EventAction {
 
     constructor(private _statusId: string, private _on: boolean) {
@@ -594,17 +687,18 @@ export class EASetStatus extends EventAction {
     static ID = 'SetStatus';
     
     /**
-     * Create an action that set a player status (on or off).
+     * Creates an `EASetStatus` instance from it JSON definition stored in the
+     * given JSON object.
      * @param obj Schema
-     *  ```
-     *  {
-     *      "id": "SetStatus",
-     *      "statusId": string,
-     *      "on": boolean
-     *  }
-     *  ```
-     * @param af 
-     * @param ec 
+     *     ```
+     *     {
+     *         "id": "SetStatus",
+     *         "statusId": string,
+     *         "on": boolean
+     *     }
+     *     ```
+     * @param af Not used.
+     * @param ec Not used.
      */
     static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASetStatus {
         if (typeof(obj['statusId']) !== 'string') throw new Error('Missing status id.');
