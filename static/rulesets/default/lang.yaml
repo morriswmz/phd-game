@@ -29,7 +29,7 @@ item.resubmittedPaper.description: A resubmitted paper, waiting for another roun
 item.paper: Paper
 item.paper.description: A published paper!
 item.rejectedPaper: Rejected Paper
-item.rejectedPaper.description: A rejected, waiting to be rewritten and resubmitted.
+item.rejectedPaper.description: A rejected paper, waiting to be rewritten and resubmitted.
 item.conferencePaper: Conference Paper
 item.conferencePaper.description: A published conference paper. Reduces the chance of losing your new ideas to other researchers.
 item.submittedConfPaper: Submitted Conference Paper
@@ -40,11 +40,11 @@ status.firstYear.description: "**+1 hope** every month."
 status.brokenEquipment: Broken Equipment
 status.brokenEquipment.description: Cannot conduct experiments this month.
 status.callForPapers: Call for Papers
-status.callForPapers.description: You can submit a conference paper once you have a major result.
+status.callForPapers.description: You can submit a conference paper once you have a preliminary result.
 status.upgradedEquipment: Upgraded Equipment
 status.upgradedEquipment.description: Increases the chance of getting nice figures.
 status.cloudStorage: Cloud Storage
-status.cloudStorage.description: Automatically synchronizes local data to the cloud. Risk of losing experiment data is drastically reduced.
+status.cloudStorage.description: Automatically synchronizes local data to the cloud. The risk of losing experiment data is drastically reduced.
 status.exhaustion: Exhaustion
 status.exhaustion.description: "**-5 hope** every month. Time to slow down and take a break."
 status.lateYearAnxiety: "Late Year Anxiety"
@@ -68,7 +68,7 @@ message.exhaustionIgnored: You felt that you should carry on your research.
 message.exhaustionBadMonth: You found it difficult to concentrate on your research. You felt that your mind is clogged and you need some distractions.
 message.exhaustionNoProgress: You forced yourself to focus. However, it did not help much. You did not make any good progress this month.
 # late year anxiety
-message.lateYearAnxiety: Three years passed. You have witnessed many graduations. You began to worry about whether your can graduation on time.
+message.lateYearAnxiety: Three years passed. You have witnessed many graduations. You began to worry about whether you can graduation on time.
 # funding
 message.fundingRises: "ACADEMIC NEWS: an increase in the government research funding is expected. \"Continuous investments in scientific research will pave the way to a brighter future,\" said one of the government officials."
 message.fundingFalls: "ACADEMIC NEWS: due to high deficits, the government is expected to cut its spending this fiscal year. Research funding is likely to be affected."
@@ -76,12 +76,12 @@ message.moreFunding: Your advisor became the PI of a new research grant. Everyon
 message.lessFunding: Your advisor did not get any new funding for a while. Everyone in the lab felt a little worried.
 message.lostFunding: The funding of one of your advisor's projects was **cut**. Everyone in the lab felt worried.
 # unhappy advisor
-message.unhappyAdvisor: Your advisor seemed to be unhappy about your recent performance. "Research is a challenging task. I hope you could put more efforts into it."
+message.unhappyAdvisor: Your advisor seemed to be unhappy about your recent performance. "Research is a challenging task. I hope you can put more efforts into it."
 message.advisorHappyAgain: Your advisor seemed to be quite satisfied with your recent performance.
 # main events
 message.beginning: Congratulations. You have been **admitted** as a new PhD student here. Will you accept the offer?
 message.acceptOffer: Accept the offer.
-message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **3 journal papers** to qualify your degree.
+message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **3 journal papers** to qualify for your degree.
 message.declineOffer: Decline the offer.
 message.declinedOffer: You changed your mind and **declined the offer**. Perhaps it is a better choice in this timeline.
 message.newMonth: A new month begins. Let us check the to-do list.
@@ -90,11 +90,11 @@ message.gainNewIdea1: After digging into piles of papers, you suddenly gained a 
 message.gainNewIdea2: After scratching your head for countless hours, you came up with a **new idea**.
 message.workOnIdea: Work on developing an idea.
 message.oldIdea1: After talking with your advisor about your new idea, your advisor suggested you check an old paper. It turns out that it has been done before. 
-message.oldIdea2: Your advisor thought your new idea is not interesting, and suggested you come up with a new one.
-message.oldIdea3: Your advisor thought your new idea is not novel enough, and suggested you read more papers. 
+message.oldIdea2: Your advisor thought your new idea was not interesting, and suggested you come up with a new one.
+message.oldIdea3: Your advisor thought your new idea was not novel enough, and suggested you read more papers. 
 message.oldIdea4: You came up with a bunch of ideas. However, upon further searching, you found that they have already been done before. 
 message.noIdea1: You opened too many tabs in the web browser and it suddenly **crashed**. You lost track of the papers you were reading.
-message.gainPrelimResult: Your idea is working! You obtained some a **preliminary result**.
+message.gainPrelimResult: Your idea is working! You obtained a **preliminary result**.
 message.ideaNotWorking: It turned out that this idea is not working. Time to try another one.
 message.workOnPrelimResult: Work on developing a preliminary result.
 message.gainMajorResult: You developed a **major result**.
@@ -105,10 +105,10 @@ message.gainFigure: The experiments went very well. You gained a nice **figure**
 message.noFigure1: You did not get any interesting results from the current setup. It seems that you need to conduct more experiments.
 message.noFigure2: Your program ran out of memory and crashed. You need to redo some of the experiments.
 message.noFigure3: The simulation took a much longer time than you expected. The results are not available yet.
-message.noFigure4: You encountered an technical issue while setting up the experiments. It took you a while to find a work-around and you definitely need more time to complete the experiments.
+message.noFigure4: You encountered an technical issue while setting up the experiments. It took you a while to find a workaround and you definitely need more time to complete the experiments.
 message.lostData: The computer crashed when processing the data. It seems that you need to redo the experiments.
 message.lostDataRecovered: The computer crashed when processing the data. Luckily you **recovered** them from the cloud storage and obtained a nice **figure**. 
-message.wrongFigure: You obtained some contradicting results. Something went wrong and you need to more time to check it.
+message.wrongFigure: You obtained some contradictory results. Something went wrong and you need to more time to check it.
 message.workOnPaper: Work on a draft paper.
 message.draftPaperComplete: You completed your draft paper and submitted it!
 message.draftPaperIncomplete1: Your advisor was too busy to go through the draft paper with you last month.
@@ -128,14 +128,14 @@ message.paperRejected6: "INBOX: Based on the reviewers' comments, we regret to i
 message.paperRejected7: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers pointed out that your assumptions are unrealistic in practice."
 message.paperRejected8: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers commented that your contributions are not significant enough."
 message.paperRejected9: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers questioned your experiment setup and requested that you should conduct additional experiments."
-message.paperRejected10: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers cite a lack of references to latest research papers."
+message.paperRejected10: "INBOX: Based on the reviewers' comments, we regret to inform you that your manuscript has been **REJECTED** for publication. One of the reviewers cited a lack of references to latest research papers."
 message.revisePaper: Revise and resubmit a rejected paper.
 message.revisionComplete: Following the reviewers' comments, you finished rewriting this rejected paper and resubmitted it.
 message.resubmittedPaperAccepted: "INBOX: We are pleased to inform you that your manuscript has been **ACCEPTED** for publication."
 message.resubmittedPaperRejected1: "INBOX: We regret to inform you that your revised manuscript has been **REJECTED** for publication."
 message.slackOff: Slack off.
 message.caughtSlackOff1: Your advisor caught you slacking off and reminded you of your tasks via various emails.
-message.caughtSlackOff2: Your advisor made a phone call to the lab and found out that your were not in the lab. You received an email reminding you of your research progress.
+message.caughtSlackOff2: Your advisor made a phone call to the lab and found out that you were not in the lab. You received an email reminding you of your research progress.
 message.caughtSlackOff3: Your advisor sent you several emails but did not get any reply. Your advisor then figured out that you are not in the lab and sent you another email reminding of your pending tasks.
 message.slackOffSuccess: You relaxed for a while and regained some hope.
 message.lostAllHope: You lost all hope and **quitted your PhD**.
@@ -156,14 +156,14 @@ message.contactEquipmentSupport: Contact technical support!
 message.equipmentFixed: Your fix worked! Praise the magic of engineering.
 message.equipmentNotFixed: You tried to fix it. However, it is still not working.
 message.equipmentFixedByTechSupport: Technicians arrived and fixed the lab equipment.
-message.equipmentNotFixedByTechSupport: Technicians arrived and tried to fix the lab equipment. However the issue turned out to be more complicated than expected, and they needed more time to fix it.
+message.equipmentNotFixedByTechSupport: Technicians arrived and tried to fix the lab equipment. However, the issue turned out to be more complicated than expected, and they needed more time to fix it.
 message.newEquipment: Your advisor **upgraded the old lab equipment**. Everyone was excited.
 message.cloudStorage: "UNIVERSITY NEWS: free cloud storage now available to all students and faculties. Your data are now safe on the cloud."
 # conference event
-message.callForPapers: The great International Conference on PhD Simulation (ICPS) is **calling for papers**. Submission is open for the following **6 months**. If you have any preliminary result, you can submit.
+message.callForPapers: The great International Conference on PhD Simulation (ICPS) is **calling for papers**. Submission is open for the following **6 months**. If you have any preliminary result, you can submit it.
 message.workOnConf: Work on a conference paper.
 message.finishedConfPaper: You finished the conference paper and submitted it!
-message.confPaperRejected: Your submission to ICPS{{year}} was **REJECTED**. The reviewers were not convinced of the significance your results. Nevertheless, you can continue to work on these results.
+message.confPaperRejected: Your submission to ICPS{{year}} was **REJECTED**. The reviewers were not convinced of the significance of your results. Nevertheless, you can continue to work on these results.
 message.confPaperAccepted1: "INBOX: Congratulations on the **ACCEPTANCE** of this nice work as an poster paper in ICPS{{year}}."
 message.confPaperAccepted2: "INBOX: Congratulations on the **ACCEPTANCE** of this nice work as an oral paper in ICPS{{year}}."
 message.attendConf: You arrived at the conference center for ICPS{{year}} and finished your presentation. Let us check the schedule for the next day.
@@ -176,20 +176,20 @@ message.attendConfSession: Attend some interesting sessions.
 message.confNewIdea: You attended several interesting talks and came up with **a new idea** while discussing with other researchers during the conference.
 message.confNoNewIdea: The talks were interesting. The food was great, too.
 # advisor comments
-message.qualifyReminder: Your advisor thought that your are not well prepared for your qualifying exam and urged you to pay more attention to it.
-message.tooManyIdeas: Your advisor sent you an email saying that you should focus more on turing ideas into solid results.
-message.notEnoughPapers: Your advisor sent you an email reminding your progress, expressing the anxiety to see more papers.
+message.qualifyReminder: Your advisor thought that you are not well prepared for your qualifying exam and urged you to pay more attention to it.
+message.tooManyIdeas: Your advisor sent you an email saying that you should focus more on turning ideas into solid results.
+message.notEnoughPapers: Your advisor sent you an email reminding you of your progress, expressing the anxiety to see more papers.
 message.rejectedPaperAdvisor: Your advisor sent you an email regarding the rejection of your recent paper. "Do not get discouraged by the reviewers' comments. Cool off, revise, and resubmit."
 # misc events
 message.paperCited: Your recent paper got more citations. You feel recognized.
-message.seminar1: You attended a seminar related to your research this month. The speaker's slides were very inspiring and you gained **a new idea**.
-message.seminar2: You attended a seminar related to your research this month. The Q&A session was very inspiring and you gained **a new idea**.
-message.seminar3: A distinguished lecturer gave a inspiring talk in this week's seminar. You suddenly came up with **a new idea**.
+message.seminar1: You attended a seminar related to your research this month. The speaker's slides were very inspiring, and you gained **a new idea**.
+message.seminar2: You attended a seminar related to your research this month. The Q&A session was very inspiring, and you gained **a new idea**.
+message.seminar3: A distinguished lecturer gave an inspiring talk in this week's seminar. You suddenly came up with **a new idea**.
 message.showerIdea: You found the missing piece during a shower. You develop one of your preliminary results into a **major result**.
 message.randomHope1: The city museum is hosting a special exhibition this month. You paid a visit and it was a great experience. You feel relieved.
 message.randomHope2: There was an open concert near the campus. You spent some time enjoying the music and felt relieved.
-message.randomHope3: You had a party with your labmates. The food was great and you felt relieved.
-message.randomHope4: A new restaurant opened near your apartment. You paid a visit and the food was great. You felt much better.
+message.randomHope3: You had a party with your labmates. The food was great, and you felt relieved.
+message.randomHope4: A new restaurant opened near your residence. You paid a visit, and the food was great. You felt much better.
 message.randomHope5: An item in your shopping cart was on sale. You instantly bought it and felt much better.
 # confirms
 message.oops: Oops.
