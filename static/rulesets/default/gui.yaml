@@ -1,0 +1,18 @@
+---
+footer:
+  preamble:
+  buttons:
+    - text: ui.github
+      url: https://github.com/morriswmz/phd-game
+    - text: ui.helpButton
+      messageTitle: ui.helpTitle
+      message: ui.helpContent
+      confirmText: ui.ok
+    - text: ui.privacyNoticeButton
+      messageTitle: ui.privacyNoticeTitle
+      message: ui.privacyNoticeContent
+      confirmText: ui.ok
+    - text: ui.seedButton
+      messageTitle: ui.seedTitle
+      message: ui.seedContent
+      confirmText: ui.ok

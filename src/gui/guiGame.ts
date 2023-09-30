@@ -1,8 +1,4 @@
-import { LocalizationDictionary } from '../i18n/localization';
 import { GameState, VariableChangedEvent } from '../gameState';
-import { Inventory, Item } from '../effect/item';
-import { EffectProviderCollectionChangedEvent } from '../effect/effect';
-import { StatusTable, Status } from '../effect/status';
 import { GuiModalBox } from './guiModalBox';
 import { GuiBase } from './guiBase';
 import { GameEngine } from '../gameEngine';
@@ -10,6 +6,11 @@ import { GuiMessageWindow } from './guiMessageWindow';
 import { GuiItemList, GuiStatusList } from './guiEffectProviderList';
 import { GuiFX } from './guiFx';
 import { GameTextEngine } from './textEngine';
+import { GuiFooter, GuiFooterDefinition } from './guiFooter';
+
+export interface GuiGameWindowDefinition {
+    footer?: GuiFooterDefinition;
+}
 
 export interface GuiGame {
 
@@ -26,20 +27,21 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
     private _itemList: GuiItemList;
     private _fx: GuiFX;
     private _statusList: GuiStatusList;
+    private _footer: GuiFooter;
     private _hopeMeter: HTMLElement;
     private _timeMeter: HTMLElement;
-    private _btnHelp: HTMLAnchorElement;
-    private _btnSeed: HTMLAnchorElement;
-    private _btnPrivacyNotice: HTMLAnchorElement;
 
     private _gameEngine: GameEngine;
 
-    constructor(container: HTMLElement, textEngine: GameTextEngine, gameEngine: GameEngine) {
+    constructor(container: HTMLElement, textEngine: GameTextEngine,
+                gameEngine: GameEngine, definition: GuiGameWindowDefinition) {
         super(container, textEngine);
         this._gameEngine = gameEngine;
         // Initialize sub-components.
-        this._messageWindow = new GuiMessageWindow(this.retrieveElement('message_window'), textEngine);
-        this._modalBox = new GuiModalBox(this.retrieveElement('modal_container'), textEngine);
+        this._messageWindow = new GuiMessageWindow(
+            this.retrieveElement('message_window'), textEngine);
+        this._modalBox = new GuiModalBox(
+            this.retrieveElement('modal_container'), textEngine);
         this._itemList = new GuiItemList(
             this.retrieveElement('items_window'), textEngine,
             this._gameEngine.gameState.playerInventory,
@@ -53,9 +55,9 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             textEngine);
         this._hopeMeter = this.retrieveElement('hope_meter');
         this._timeMeter = this.retrieveElement('time_meter');
-        this._btnHelp = this.retrieveElement('btn_help');
-        this._btnSeed = this.retrieveElement('btn_seed');
-        this._btnPrivacyNotice = this.retrieveElement('btn_privacy_notice');
+        this._footer = new GuiFooter(
+            this.retrieveElement('footer'), textEngine, this._modalBox,
+            definition.footer);
         // Handlers for game state updates.
         this._gameEngine.gameState.onVariableChanged = (gs, e) => {
             this.handleVariableUpdate(gs, e);
@@ -77,28 +79,6 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
                 status.icon
             );
         };
-        // Other event handlers
-        this._btnHelp.onclick = e => {
-            this._modalBox.display(
-                'ui.helpTitle',
-                'ui.helpContent',
-                'ui.ok'
-            );
-        };
-        this._btnPrivacyNotice.onclick = e => {
-            this._modalBox.display(
-                'ui.privacyNoticeTitle',
-                'ui.privacyNoticeContent',
-                'ui.ok'
-            );
-        };
-        this._btnSeed.onclick = e => {
-            this._modalBox.display(
-                'ui.seedTitle',
-                'ui.seedContent',
-                'ui.ok'
-            );
-        };
     }
 
     playFx(fx: string): void {
@@ -112,12 +92,6 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
     }
 
     updateUIText(): void {
-        this._btnHelp.innerHTML =
-            this._textEngine.localizeAndRender('ui.helpButton');
-        this._btnPrivacyNotice.innerHTML =
-            this._textEngine.localizeAndRender('ui.privacyNoticeButton');
-        this._btnSeed.innerHTML =
-            this._textEngine.localizeAndRender('ui.seedButton')
         this._itemList.setTitle('ui.items');
         this._statusList.setTitle('ui.status');        
     }

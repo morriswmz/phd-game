@@ -25,6 +25,9 @@ code {
 a, a:hover, a:active, a:link {
     text-decoration: none;
 }
+a:hover {
+    cursor: pointer;
+}
 a.btn {
     display: block;
     padding: 0.4em;
