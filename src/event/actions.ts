@@ -534,6 +534,59 @@ export class EAUpdateVariables extends EventAction {
 }
 
 /**
+ * Updates one or more variables' limits.
+ */
+export class EAUpdateVariableLimits extends EventAction {
+
+    constructor(private _limitsByVarName: Record<string, [number, number]>) {
+        super();
+    }
+
+    static ID = 'UpdateVariableLimits';
+
+    /**
+     * Creates an `EAUpdateVariableLimits` instance from it JSON definition
+     * stored in the given JSON object.
+     * @param obj Schema:
+     *     ```
+     *     {
+     *         "id": "UpdateVariableLimits",
+     *         "updates": { [varName: string]: [number, number] }
+     *     }
+     *     ```
+     *     Limits are defined via a pair of constant numbers, where the first
+     *     number specifies the lower bound (inclusive) and the second number
+     *     specifies the upper bound (inclusive). The can be Infinity or
+     *     -Infinity, but cannot be NaN expressions.
+     * @param af Not used.
+     * @param ec Not used.
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          ec: EventExpressionCompiler): EAUpdateVariableLimits {
+        if (!obj['updates']) throw new Error('Missing update definitions.');
+        let limitsByVarName: Record<string, [number, number]> = {};
+        for (const varName in obj['updates']) {
+            let limits = obj['updates'][varName];
+            if (!Array.isArray(limits) || limits.length !== 2 ||
+                typeof limits[0] !== 'number' ||
+                typeof limits[1] !== 'number') {
+                throw new Error('Limits need to be two-element tuples.');
+            }
+            limitsByVarName[varName] = <[number, number]>limits;
+        }
+        return new EAUpdateVariableLimits(limitsByVarName);
+    }
+
+    async execute(gs: GameState, ap: GuiActionProxy,
+                  ee: EventExpressionEvaluator): Promise<void> {
+        for (const varName in this._limitsByVarName) {
+            const limits = this._limitsByVarName[varName];
+            gs.setVarLimits(varName, limits[0], limits[1]);
+        }
+    }
+}
+
+/**
  * Gives the player a certain amount of a certain item.
  */
 export class EAGiveItem extends EventAction {

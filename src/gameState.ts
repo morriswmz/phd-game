@@ -111,6 +111,11 @@ export class GameState {
      * @param ub Upper bound.
      */
     setVarLimits(varName: string, lb: number, ub: number): void {
+        if (isNaN(lb)) throw new Error("Lower bound cannot be NaN");
+        if (isNaN(ub)) throw new Error("Upper bound cannot be NaN");
+        if (lb > ub) {
+            throw new Error('Lower bound cannot be greater than upper bound.');
+        }
         this._varLimits[varName] = [lb, ub];
     }
 

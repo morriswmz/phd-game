@@ -3,8 +3,14 @@
   trigger: Initialization
   once: true
   actions:
+  - id: UpdateVariableLimits
+    updates:
+      player.hope: [0, 100]
   - id: UpdateVariables
     updates:
+      month: 1
+      year: 1
+      player.hope: 50
       # number of papers read by the player
       player.readPapers: 0
       player.rulesBroken: 0

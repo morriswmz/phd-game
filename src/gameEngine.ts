@@ -4,7 +4,7 @@ import { GuiGameWindow, GuiGame } from './gui/guiGame';
 import { ItemRegistry, Inventory } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
-import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch } from './event/actions';
+import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits } from './event/actions';
 import { EventConditionFactory, ECExpression } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -123,6 +123,7 @@ export class GameEngine {
         this._actionFactory.registerDeserializer(EACoinFlip);
         this._actionFactory.registerDeserializer(EAUpdateVariable);
         this._actionFactory.registerDeserializer(EAUpdateVariables);
+        this._actionFactory.registerDeserializer(EAUpdateVariableLimits);
         this._actionFactory.registerDeserializer(EAGiveItem);
         this._actionFactory.registerDeserializer(EAUpdateItemAmounts);
         this._actionFactory.registerDeserializer(EAEndGame);
@@ -140,10 +141,6 @@ export class GameEngine {
             await this.loadGameData();
         }
         this._gameState.reset(newRandomSeed);
-        this._gameState.setVar('month', 1);
-        this._gameState.setVar('year', 1);
-        this._gameState.setVar('player.hope', 50);
-        this._gameState.setVarLimits('player.hope', 0, 100);
         this._eventEngine.enableAll();
         await this._eventEngine.trigger('Initialization');
         await this._eventEngine.trigger('YearBegin');
