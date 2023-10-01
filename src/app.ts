@@ -53,7 +53,7 @@ class App {
         gui.updateUIText();
         await this._gameEngine.start(false);
         const gameLoop = () => {
-            setTimeout(() => this._gameEngine.step().then(gameLoop), 50);
+            setTimeout(() => this._gameEngine.tick().then(gameLoop), 50);
         };
         gameLoop();
         this._started = true;

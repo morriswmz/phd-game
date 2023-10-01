@@ -31,11 +31,12 @@ type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) =>
 
 export class GameState {
 
-    private _occurredEvents: { [key: string]: number; } = {};
+    private _occurredEvents: Record<string, number> = {};
+    private _pendingTriggers: Record<string, number> = {};
     private _playerInventory: Inventory;
     private _playerStatus: StatusTable;
-    private _variables: { [key: string]: number } = {};
-    private _varLimits: { [key: string]: [number, number] } = {};
+    private _variables: Record<string, number> = {};
+    private _varLimits: Record<string, [number, number]> = {};
     private _randomSeed: string;
     private _random: seedrandom.StatefulPRNG<seedrandom.State.Alea>;
 
@@ -144,6 +145,45 @@ export class GameState {
     }
 
     /**
+     * Adds a new pending trigger. If the give trigger id already exists, its
+     * priority will be updated to be the maximum between the existing priority
+     * and the new priority.
+     * @param triggerId Trigger id.
+     * @param priority Priority.
+     */
+    addPendingTrigger(triggerId: string, priority: number): void {
+        if (triggerId in this._pendingTriggers) {
+            this._pendingTriggers[triggerId] = Math.max(
+                this._pendingTriggers[triggerId], priority);
+        } else {
+            this._pendingTriggers[triggerId] = priority;
+        }
+    }
+
+    /**
+     * Returns all pending triggers in an array, sorted by priority in
+     * descending order.
+     */
+    getPendingTriggers(): string[] {
+        let sortedTriggerIds = Object.keys(this._pendingTriggers);
+        sortedTriggerIds.sort((a, b) => {
+            const priorityA = this._pendingTriggers[a];
+            const priorityB = this._pendingTriggers[b];
+            if (priorityA !== priorityB) return priorityA > priorityB ? -1 : 1;
+            if (a === b) return 0;
+            return a < b ? -1 : 1;
+        });
+        return sortedTriggerIds;
+    }
+
+    /**
+     * Clears all pending triggers.
+     */
+    clearPendingTriggers(): void {
+        this._pendingTriggers = {};
+    }
+
+    /**
      * Resets all internal states for a new game.
      * @param newRandomSeed If true will generate a new random seed and use the
      * new seed to reset the random number generator. Otherwise the existing
@@ -153,6 +193,7 @@ export class GameState {
         this.playerInventory.clear();
         this.playerStatus.clear();
         this._occurredEvents = {};
+        this.clearPendingTriggers();
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};

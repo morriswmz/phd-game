@@ -1,8 +1,6 @@
 import { GameState, EndGameState } from '../gameState';
-import { GuiGameWindow } from '../gui/guiGame';
 import { EventAction, GuiActionProxy } from './core';
-import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventFunctionTableProvider, EventExpressionCompiler } from './expression';
-import { CompiledExpression, compileExpression, ExpressionEvaluator } from '../utils/expression';
+import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
 
 // Note on the usage of typeof.
@@ -764,6 +762,99 @@ export class EASetStatus extends EventAction {
             gs.playerStatus.add(this._statusId);
         } else {
             gs.playerStatus.remove(this._statusId);
+        }
+    }
+
+}
+
+/**
+ * Triggers one or more events via one or more trigger ids.
+ * 
+ * IMPORTANT: Game events will be triggered asynchronously instead of
+ * synchronously:
+ * 
+ * 1. Each trigger id listed in this action will be pushed to a queue and
+ *    processed after all game events from the ongoing trigger are handled.
+ * 2. The processing order is determined by priority (trigger ids with higher
+ *    priorities will be processed earlier than those with lower priorities).
+ * 3. When multiple priorities are defined for the same trigger id, the highest
+ *    one will be picked.
+ * 
+ * Example:
+ * 
+ * Suppose you define a game event named "OnTick" triggered by "Tick", which
+ * contains an event action that triggers (1) "AfterTickA" with priority 100,
+ * and (2) "AfterTickB" with priority 200.
+ * 
+ * Suppose you also define another game event named "OnAfterTickA" triggered by
+ * "AfterTickA", which contains an event action that triggers "AfterTickC" with
+ * priority 50.
+ * 
+ * Then after "Tick" is triggered, the following will happen in order:
+ * 
+ * 1. All event actions under "OnTick" will be executed;
+ * 2. All event actions under "AfterTickB" will be executed;
+ * 3. All event actions under "AfterTickA" will be executed;
+ * 4. All event actions under "AfterTickC" will be executed.
+ */
+export class EATriggerEvents extends EventAction {
+
+    constructor(private _priorityByTriggerId: Record<string, number>) {
+        super();
+    }
+
+    static ID = 'TriggerEvents'
+
+    /**
+     * Creates an `EATriggerEvents` instance from it JSON definition stored in
+     * the given JSON object.
+     * @param obj Schema
+     *     ```
+     *     {
+     *         "id": "TriggerEvents",
+     *         "triggers": [
+     *             {
+     *                 "id": string,
+     *                 "priority": number | undefined
+     *             }
+     *         ]
+     *     }
+     *     ```
+     *     The default priority is 0. Triggers with higher priorities with be
+     *     processed earlier than those with lower priorities.
+     * @param af Not used.
+     * @param ec Not used.
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          ec: EventExpressionCompiler): EATriggerEvents {
+        let priorityByTriggerId: Record<string, number> = {};
+        if (!obj['triggers'] || !Array.isArray(obj['triggers'])) {
+            throw new Error('Missing trigger definitions.');
+        }
+        for (const trigger of obj['triggers']) {
+            let triggerId = trigger['id'];
+            if (typeof triggerId !== 'string') {
+                throw new Error('Missing valid trigger id.');
+            }
+            let priority = trigger['priority'] || 0;
+            if (typeof priority !== 'number' || isNaN(priority)) {
+                throw new Error('Priority must be a valid number.');
+            }
+            if (triggerId in priorityByTriggerId) {
+                priorityByTriggerId[triggerId] = Math.max(
+                    priorityByTriggerId[triggerId], priority);
+            } else {
+                priorityByTriggerId[triggerId] = priority;
+            }
+        }
+        return new EATriggerEvents(priorityByTriggerId);
+    }
+
+    async execute(gs: GameState, ap: GuiActionProxy,
+                  ee: EventExpressionEvaluator): Promise<void> {
+        for (const triggerId in this._priorityByTriggerId) {
+            gs.addPendingTrigger(triggerId,
+                                 this._priorityByTriggerId[triggerId]);
         }
     }
 

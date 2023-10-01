@@ -8,6 +8,7 @@
       player.hope: [0, 100]
   - id: UpdateVariables
     updates:
+      elapsedMonth: 0
       month: 1
       year: 1
       player.hope: 50
@@ -26,6 +27,25 @@
   - id: SetStatus
     statusId: firstYear
     on: true
+# Game tick loop
+- id: GameTick
+  trigger: Tick
+  actions:
+  - id: UpdateVariables
+    updates:
+      elapsedMonth: elapsedMonth + 1
+      month: ((elapsedMonth - 1) % 12) + 1
+      year: floor((elapsedMonth - 1) / 12) + 1
+  - id: Switch
+    branches:
+    - condition: elapsedMonth % 12 === 1
+      actions:
+      - id: TriggerEvents
+        triggers:
+        - id: YearBegin
+  - id: TriggerEvents
+    triggers:
+    - id: MonthBegin
 - id: TheBeginning
   trigger: MonthBegin
   once: true

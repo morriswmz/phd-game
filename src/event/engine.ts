@@ -52,8 +52,6 @@ export class GameEventEngine {
     /**
      * Triggers events.
      * @param t Trigger id.
-     * @param callback Callback function that will be called after the execution
-     * of every action.
      */
     async trigger(t: string): Promise<void> {
         if (t.length === 0) throw new Error('Trigger id cannot be empty.');

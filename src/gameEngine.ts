@@ -4,7 +4,7 @@ import { GuiGameWindow, GuiGame } from './gui/guiGame';
 import { ItemRegistry, Inventory } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
-import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits } from './event/actions';
+import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents } from './event/actions';
 import { EventConditionFactory, ECExpression } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -129,6 +129,7 @@ export class GameEngine {
         this._actionFactory.registerDeserializer(EAEndGame);
         this._actionFactory.registerDeserializer(EASetStatus);
         this._actionFactory.registerDeserializer(EASwitch);
+        this._actionFactory.registerDeserializer(EATriggerEvents);
         // Condition factory
         this._conditionFactory.registerDeserializer(ECExpression);
     }
@@ -143,35 +144,28 @@ export class GameEngine {
         this._gameState.reset(newRandomSeed);
         this._eventEngine.enableAll();
         await this._eventEngine.trigger('Initialization');
-        await this._eventEngine.trigger('YearBegin');
-        await this._eventEngine.trigger('MonthBegin');
     }
 
     /**
-     * Advance one step.
+     * Advances one game tick.
      */
-    async step(): Promise<void> {
+    async tick(): Promise<void> {
         let endGameState = this._gameState.endGameState;
         if (endGameState !== EndGameState.None) {
             // Restart the game
             await this.start(endGameState === EndGameState.Winning);
             return;
         }
-        let month = this._gameState.getVar('month', true) + 1;
-        let year = this._gameState.getVar('year', true);
-        let newYear = false;
-        if (month === 13) {
-            month = 1;
-            ++year;
-            newYear = true;
-            this._gameState.setVar('year', year);
-        }
-        this._gameState.setVar('month', month);
         this._gameState.playerStatus.tick();
-        if (newYear) {
-            await this._eventEngine.trigger('YearBegin');
-        } 
-        await this._eventEngine.trigger('MonthBegin');
+        await this._eventEngine.trigger('Tick');
+        while (true) {
+            const pendingTriggers = this._gameState.getPendingTriggers();
+            if (pendingTriggers.length === 0) break;
+            this._gameState.clearPendingTriggers();
+            for (const triggerId of pendingTriggers) {
+                await this._eventEngine.trigger(triggerId);
+            }
+        }
     }
     
 }
