@@ -1,4 +1,21 @@
 ---
+statsBar:
+  items:
+  - text: ui.hopeMeter
+    side: left
+    updateTrigger:
+      variables: ["player.hope"]
+    conditionalStyles:
+    - condition: player.hope > 40
+      styleClasses: ["normal"]
+    - condition: player.hope <= 40 && player.hope > 20
+      styleClasses: ["warning"]
+    - condition: player.hope <= 20
+      styleClasses: ["critical"]
+  - text: ui.timeMeter
+    side: right
+    updateTrigger:
+      variables: ["year", "month"]
 footer:
   preamble:
   buttons:

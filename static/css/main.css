@@ -64,13 +64,23 @@ em {
     margin-top: 0.5em;
     font-weight: normal;
 }
-#status_bar {
+#stats_bar {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
 }
-#status_bar > div {
+#stats_bar > div {
     margin: 0 1em;
+}
+#stats_bar p {
+    margin: 0 0.5em;
+    padding: 0;
+}
+#stats_left {
+    text-align: left;
+}
+#stats_right {
+    text-align: right;
 }
 .warning {
     color: #ffb300;

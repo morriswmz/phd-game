@@ -77,6 +77,13 @@ export class GameEngine {
     }
 
     /**
+     * Retrieves the expression engine.
+     */
+    get expressionEngine(): EventExpressionEngine {
+        return this._expressionEngine;
+    }
+
+    /**
      * Loads game data.
      */
     async loadGameData(): Promise<void> {

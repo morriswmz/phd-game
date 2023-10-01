@@ -7,8 +7,10 @@ import { GuiItemList, GuiStatusList } from './guiEffectProviderList';
 import { GuiFX } from './guiFx';
 import { GameTextEngine } from './textEngine';
 import { GuiFooter, GuiFooterDefinition } from './guiFooter';
+import { GuiStatsBar, GuiStatsBarDefinition } from './guiStatsBar';
 
 export interface GuiGameWindowDefinition {
+    statsBar?: GuiStatsBarDefinition;
     footer?: GuiFooterDefinition;
 }
 
@@ -22,14 +24,13 @@ export interface GuiGame {
 
 export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
 
+    private _statsBar: GuiStatsBar;
     private _messageWindow: GuiMessageWindow;
     private _modalBox: GuiModalBox;
     private _itemList: GuiItemList;
-    private _fx: GuiFX;
     private _statusList: GuiStatusList;
     private _footer: GuiFooter;
-    private _hopeMeter: HTMLElement;
-    private _timeMeter: HTMLElement;
+    private _fx: GuiFX;
 
     private _gameEngine: GameEngine;
 
@@ -38,6 +39,9 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
         super(container, textEngine);
         this._gameEngine = gameEngine;
         // Initialize sub-components.
+        this._statsBar = new GuiStatsBar(
+            this.retrieveElement('stats_bar'), textEngine,
+            gameEngine.expressionEngine, definition.statsBar);
         this._messageWindow = new GuiMessageWindow(
             this.retrieveElement('message_window'), textEngine);
         this._modalBox = new GuiModalBox(
@@ -50,14 +54,12 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             this.retrieveElement('status_window'), textEngine,
             this._gameEngine.gameState.playerStatus,
             this._gameEngine.statusRegistry);
-        this._fx = new GuiFX(
-            this.retrieveElement('fx_container'),
-            textEngine);
-        this._hopeMeter = this.retrieveElement('hope_meter');
-        this._timeMeter = this.retrieveElement('time_meter');
         this._footer = new GuiFooter(
             this.retrieveElement('footer'), textEngine, this._modalBox,
             definition.footer);
+        this._fx = new GuiFX(
+            this.retrieveElement('fx_container'),
+            textEngine);
         // Handlers for game state updates.
         this._gameEngine.gameState.onVariableChanged = (gs, e) => {
             this.handleVariableUpdate(gs, e);
@@ -104,23 +106,7 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
     }
 
     handleVariableUpdate(gs: GameState, e: VariableChangedEvent): void {
-        if (e.clear) return;
-        switch (e.varName) {
-            case 'player.hope':
-                if (e.newValue < 40 && e.newValue > 20) {
-                    this._hopeMeter.className = 'warning';
-                } else if (e.newValue <= 20) {
-                    this._hopeMeter.className = 'critical';
-                } else {
-                    this._hopeMeter.className = 'normal';
-                }
-                this._hopeMeter.innerHTML = this._textEngine.localizeAndRender('ui.hopeMeter');
-                break;
-            case 'year':
-            case 'month':
-                this._timeMeter.innerHTML = this._textEngine.localizeAndRender('ui.timeMeter');
-                break;
-        }
+        this._statsBar.handleVariableUpdate(gs, e);
     }
 
     displayMessage(message: string, confirm: string, icon?: string, fx?: string): Promise<void> {
