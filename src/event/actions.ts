@@ -459,7 +459,9 @@ export class EASwitch extends EventAction {
         let conditions: EventCondition[] = [];
         let actions: EventAction[][] = [];
         for (let branch of branches) {
-            if (!branch['condition']) throw new Error('Condition is required.');
+            if (branch['condition'] == undefined) {
+                throw new Error('Condition is required.');
+            }
             let cond = branch['condition'];
             if (typeof cond === 'string' || typeof cond === 'number') {
                 conditions.push(new ECExpression(ec.compile(cond)));
@@ -482,6 +484,114 @@ export class EASwitch extends EventAction {
                     await action.execute(gs, ap, ee);
                 }
                 break;
+            }
+        }
+    }
+
+}
+
+/**
+ * Keeps executing a list of actions until the stop condition is met. Like a
+ * loop in JavaScript.
+ */
+export class EALoop extends EventAction {
+
+    constructor(private _stopCondition: EventCondition | null,
+                private _maxIterations: number,
+                private _checkStopConditionAtEnd: boolean,
+                private _actions: EventAction[]) {
+        super();
+    }
+
+    static ID = 'Loop';
+    
+    /**
+     * Creates an `EALoop` instance from it JSON definition stored in the given
+     * JSON object.
+     * @param obj Schema:
+     *     ```
+     *     {
+     *         "id": "Loop",
+     *         "stopCondition": number | string | EventCondition | undefined,
+     *         "maxIterations": number | undefined,
+     *         "checkStopConditionAtEnd": boolean | undefined,
+     *         "actions": EventAction[]
+     *     }
+     *     ```
+     *     If `stopCondition` is not set, there will no stop condition and the
+     *     loop will keep going until `maxIterations` is reached.
+     *     `maxIterations` limits the maximum number of times the loop can run,
+     *     regardless of the `stopCondition`. If `maxIterations` is not set, or
+     *     not set to a positive value, there will be no limit.
+     *     If `checkStopConditionAtEnd` is true, `actions` will be executed
+     *     first before evaluating the stop condition (like a do ... while
+     *     loop). If the stop condition is met, next iteration will not occur.
+     *     Otherwise, the stop condition will be evaluated before executing
+     *     `actions` (like a while loop). Default value is false.
+     *     
+     * @param af Not used.
+     * @param cf Not used.
+     * @param ec The event expression compiler for compiling expressions from 
+     *     the `value` field.
+     */
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EALoop {
+        let stopCondition: EventCondition | null = null;
+        const stopConditionDef = obj['stopCondition'];
+        if (stopConditionDef != undefined) {
+            if (typeof stopConditionDef === 'string' ||
+                typeof stopConditionDef === 'number') {
+                stopCondition = new ECExpression(ec.compile(stopConditionDef));
+            } else {
+                stopCondition = cf.fromJSONObject(stopConditionDef);
+            }
+        }
+        let maxIterations = obj['maxIterations'];
+        if (maxIterations == undefined) {
+            maxIterations = 0;
+        } else if (typeof maxIterations === 'number') {
+            maxIterations = maxIterations > 0 ? maxIterations : 0;
+        } else {
+            throw new Error('maxIterations needs to be a number.');
+        }
+        let checkStopConditionAtEnd = obj['checkStopConditionAtEnd'];
+        if (checkStopConditionAtEnd == undefined) {
+            checkStopConditionAtEnd = false;
+        } else if (typeof checkStopConditionAtEnd !== 'boolean') {
+            throw new Error('checkStopConditionAtEnd need to be a boolean.');
+        }
+        if (!Array.isArray(obj['actions'])) {
+            throw new Error('Missing actions.');
+        }
+        return new EALoop(stopCondition, maxIterations, checkStopConditionAtEnd,
+                          af.fromJSONArray(obj['actions']));
+    }
+    
+    async execute(gs: GameState, ap: GuiActionProxy,
+                  ee: EventExpressionEvaluator): Promise<void> {
+        let i = 0;
+        if (this._checkStopConditionAtEnd) {
+            do {
+                for (let action of this._actions) {
+                    await action.execute(gs, ap, ee);
+                }
+                if (this._maxIterations > 0) {
+                    i++;
+                    if (i >= this._maxIterations) break;
+                }
+            } while (this._stopCondition === null ||
+                     this._stopCondition.check(gs, ee));
+        } else {
+            while (this._stopCondition === null ||
+                   this._stopCondition.check(gs, ee)) {
+                for (let action of this._actions) {
+                    await action.execute(gs, ap, ee);
+                }
+                if (this._maxIterations > 0) {
+                    i++;
+                    if (i >= this._maxIterations) break;
+                }
             }
         }
     }
