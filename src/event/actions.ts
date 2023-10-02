@@ -67,13 +67,9 @@ export class EventActionFactory {
  * Logs information on the console.
  */
 export class EALog extends EventAction {
-
-    private _message: string;
     
-    constructor(message: string)
-    {
+    constructor(private _message: string, private _dumpGameState: boolean) {
         super();
-        this._message = message;
     }
     
     static ID = 'Log';
@@ -85,7 +81,8 @@ export class EALog extends EventAction {
      *     ```
      *     {
      *         "id": "Log",
-     *         "message": string
+     *         "message": string,
+     *         "dumpGameState": boolean | undefined
      *     }
      *     ```
      * @param af Not used.
@@ -96,14 +93,14 @@ export class EALog extends EventAction {
                           cf: EventConditionFactory,
                           ec: EventExpressionCompiler): EALog {
         if (obj['message'] == undefined) throw new Error('Message missing.');
-        return new EALog(obj['message']);
+        return new EALog(obj['message'], obj['dumpGameState'] || false);
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
-        return new Promise<void>(resolve => {
-            console.log(this._message);
-            resolve();
-        });
+        console.log(this._message);
+        if (this._dumpGameState) {
+            gs.dumpToConsole();
+        }
     }
 
 }

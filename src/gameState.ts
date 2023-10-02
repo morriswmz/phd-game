@@ -218,6 +218,34 @@ export class GameState {
         });
     }
 
+    dumpToConsole(): void {
+        let lines: string[] = [];
+        lines.push('[Variables (Limits)]');
+        for (let varName in this._variables) {
+            const limits = this._varLimits[varName];
+            const limitsStr = limits ? ` ([${limits[0]}, ${limits[1]}])` : '';
+            lines.push(`${varName}: ${this._variables[varName]}${limitsStr}`);
+        }
+        lines.push('[Items]');
+        for (const itemId in this._playerInventory.items) {
+            lines.push(`${itemId} x${this._playerInventory.items[itemId][1]}`);
+        }
+        lines.push('[Status]');
+        for (const statusId in this._playerStatus.items) {
+            lines.push(statusId);
+        }
+        lines.push('[Occurred Events]');
+        lines.push(Object.keys(this._occurredEvents).join(', '));
+        lines.push('[Pending Triggers]');
+        for (let triggerId in this._pendingTriggers) {
+            const priority = this._pendingTriggers[triggerId];
+            lines.push(`"${triggerId}" with priority ${priority}`);
+        }
+        lines.push('[Seed]');
+        lines.push(this._randomSeed);
+        console.log(lines.join('\n'));
+    }
+
     protected dispatchChangeEvent(event: VariableChangedEvent) {
         if (this.onVariableChanged) {
             this.onVariableChanged(this, event);
