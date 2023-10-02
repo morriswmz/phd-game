@@ -43,6 +43,7 @@
       - id: TriggerEvents
         triggers:
         - id: YearBegin
+          priority: 1
   - id: TriggerEvents
     triggers:
     - id: MonthBegin
