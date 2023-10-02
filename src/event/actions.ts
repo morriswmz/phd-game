@@ -1,14 +1,17 @@
 import { GameState, EndGameState } from '../gameState';
-import { EventAction, GuiActionProxy } from './core';
-import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventExpressionCompiler } from './expression';
+import { EventAction, EventCondition, GuiActionProxy } from './core';
+import { EventExpressionEvaluator, CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
+import { ECExpression, EventConditionFactory } from './conditions';
 
 // Note on the usage of typeof.
 // For JSON-like objects, it is safe to check the types of numbers/strings using
 // typeof. We forbid `Number(123)` or `String('abc')`.
 // Object.prototype.toString.call() is a more foolproof approach.
 
-export type EventActionDeserializer = (obj: any, factory: EventActionFactory, ec: EventExpressionCompiler) => EventAction;
+export type EventActionDeserializer =
+    (obj: any, af: EventActionFactory, cf: EventConditionFactory,
+     ec: EventExpressionCompiler) => EventAction;
 
 export interface EventActionDeserializerDefinition {
     ID: string;
@@ -21,9 +24,12 @@ export interface EventActionDeserializerDefinition {
 export class EventActionFactory {
 
     private _deserializers: { [key: string]: EventActionDeserializer } = {};
+    private _conditionFactory: EventConditionFactory;
     private _exprCompiler: EventExpressionCompiler;
 
-    constructor(exprCompiler: EventExpressionCompiler) {
+    constructor(conditionFactory: EventConditionFactory,
+                exprCompiler: EventExpressionCompiler) {
+        this._conditionFactory = conditionFactory;
         this._exprCompiler = exprCompiler;
     }
 
@@ -35,10 +41,16 @@ export class EventActionFactory {
         if (!obj['id']) {
             throw new Error('Action id is not specified.');
         }
-        if (!this._deserializers[obj['id']]) {
-            throw new Error(`Cannot construct the event action for "${obj['id']}".`);
+        const id = obj['id'];
+        if (typeof id !== 'string') {
+            throw new Error('Action id must be a string.');
         }
-        return this._deserializers[obj['id']](obj, this, this._exprCompiler);
+        const deserializer = this._deserializers[id];
+        if (!deserializer) {
+            throw new Error(`Cannot construct the event action for "${id}".`);
+        }
+        return deserializer(obj, this, this._conditionFactory,
+                            this._exprCompiler);
     }
 
     fromJSONArray(arr: any[]): EventAction[] {
@@ -77,8 +89,12 @@ export class EALog extends EventAction {
      *     }
      *     ```
      * @param af Not used.
+     * @param cf Not used.
+     * @param ec Not used.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EALog {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EALog {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         return new EALog(obj['message']);
     }
@@ -97,7 +113,8 @@ export class EALog extends EventAction {
  */
 export class EADisplayMessage extends EventAction {
 
-    constructor(private _message: string, private _confirm: string, private _icon: string) {
+    constructor(private _message: string, private _confirm: string,
+                private _icon: string) {
         super();
     }
 
@@ -115,12 +132,18 @@ export class EADisplayMessage extends EventAction {
      *  }
      *  ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayMessage {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EADisplayMessage {
         if (obj['message'] == undefined) throw new Error('Message missing.');
-        if (obj['confirm'] == undefined) throw new Error('Confirm message missing.');
-        return new EADisplayMessage(obj['message'], obj['confirm'], obj['icon'] || '');
+        if (obj['confirm'] == undefined) {
+            throw new Error('Confirm message missing.');
+        }
+        return new EADisplayMessage(obj['message'], obj['confirm'],
+                                    obj['icon'] || '');
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
@@ -153,12 +176,20 @@ export class EADisplayRandomMessage extends EventAction {
      *  }
      *  ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayRandomMessage {
-        if (!Array.isArray(obj['messages'])) throw new Error('Messages missing.');
-        if (typeof obj['confirm'] !== 'string') throw new Error('Confirm message missing.');
-        return new EADisplayRandomMessage(obj['messages'], obj['confirm'], obj['icon'] || '');
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EADisplayRandomMessage {
+        if (!Array.isArray(obj['messages'])) {
+            throw new Error('Messages missing.');
+        }
+        if (typeof obj['confirm'] !== 'string') {
+            throw new Error('Confirm message missing.');
+        }
+        return new EADisplayRandomMessage(obj['messages'], obj['confirm'],
+                                          obj['icon'] || '');
     }
 
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
@@ -206,10 +237,13 @@ export class EADisplayChoices extends EventAction {
      *     ```
      *     The `requirement` is optional and can be an expression.
      * @param af The event action factory for creating nested actions.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `requirement` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EADisplayChoices {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EADisplayChoices {
         if (obj['message'] == undefined) throw new Error('Message missing.');
         if (!Array.isArray(obj['choices'])) throw new Error('Choices are missing.');
         let choiceMessages: string[] = [];
@@ -286,10 +320,13 @@ export class EARandom extends EventAction {
      *     ```
      *     The `weight` field can be an expression.
      * @param af The event action factory for creating nested actions.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `weight` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EARandom {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EARandom {
         if (!Array.isArray(obj['groups'])) throw new Error('Missing group definitions.');
         let weightExprs: CompiledEventExpression[] = [];
         let actions: EventAction[][] = [];
@@ -345,10 +382,13 @@ export class EACoinFlip extends EventAction {
      *     }
      *     ```
      * @param af The event action factory for creating nested actions.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `probability` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EACoinFlip {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EACoinFlip {
         const p = obj['probability'];
         if (typeof p !== 'string' && typeof p !== 'number') {
             throw new Error('Probability must be a number of an expression.');
@@ -383,7 +423,8 @@ export class EACoinFlip extends EventAction {
  */
 export class EASwitch extends EventAction {
 
-    constructor(private _conditions: CompiledEventExpression[], private _actions: EventAction[][]) {
+    constructor(private _conditions: EventCondition[],
+                private _actions: EventAction[][]) {
         super();
     }
 
@@ -398,7 +439,7 @@ export class EASwitch extends EventAction {
      *         "id": "Switch",
      *         "branches": [
      *             {
-     *                 "condition": string | number,
+     *                 "condition": string | number | EventCondition,
      *                 "actions": EventAction[]
      *             }
      *         ]
@@ -406,22 +447,28 @@ export class EASwitch extends EventAction {
      *     ```
      *     Each `condition` can also be an expression.
      * @param af The event action factory for creating nested actions.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `condition` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASwitch {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EASwitch {
         const branches = obj['branches'];
         if (!Array.isArray(branches)) throw new Error('Expecting an array of branches.');
-        let conditions: CompiledEventExpression[] = [];
+        let conditions: EventCondition[] = [];
         let actions: EventAction[][] = [];
         for (let branch of branches) {
             if (!branch['condition']) throw new Error('Condition is required.');
             let cond = branch['condition'];
-            if (typeof cond !== 'string' && typeof cond !== 'number') {
-                throw new Error('Condition must be either an expression or a number.');
+            if (typeof cond === 'string' || typeof cond === 'number') {
+                conditions.push(new ECExpression(ec.compile(cond)));
+            } else {
+                conditions.push(cf.fromJSONObject(cond));
             }
-            conditions.push(ec.compile(cond));
-            if (!Array.isArray(branch['actions'])) throw new Error('Missing actions.');
+            if (!Array.isArray(branch['actions'])) {
+                throw new Error('Missing actions.');
+            }
             actions.push(af.fromJSONArray(branch['actions']));
         }
         return new EASwitch(conditions, actions);
@@ -430,7 +477,7 @@ export class EASwitch extends EventAction {
     async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
         // Check operation
         for (let i = 0;i < this._conditions.length;i++) {
-            if (ee.eval(this._conditions[i])) {
+            if (this._conditions[i].check(gs, ee)) {
                 for (let action of this._actions[i]) {
                     await action.execute(gs, ap, ee);
                 }
@@ -465,10 +512,13 @@ export class EAUpdateVariable extends EventAction {
      *     ```
      *     The `value` field can also be an expression.
      * @param af Not used.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `value` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariable {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EAUpdateVariable {
         if (!obj['variable']) throw new Error('Missing variable name.');
         if (obj['value'] == undefined) throw new Error('Missing value.');
         let expr = obj['value'];
@@ -509,10 +559,13 @@ export class EAUpdateVariables extends EventAction {
      *     }
      *     ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `updates` map.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateVariables {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EAUpdateVariables {
         if (!obj['updates']) throw new Error('Missing update definitions.');
         let varNames: string[] = [];
         let exprs: CompiledEventExpression[] = [];
@@ -557,9 +610,11 @@ export class EAUpdateVariableLimits extends EventAction {
      *     specifies the upper bound (inclusive). The can be Infinity or
      *     -Infinity, but cannot be NaN expressions.
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
     static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
                           ec: EventExpressionCompiler): EAUpdateVariableLimits {
         if (!obj['updates']) throw new Error('Missing update definitions.');
         let limitsByVarName: Record<string, [number, number]> = {};
@@ -608,10 +663,13 @@ export class EAGiveItem extends EventAction {
      *     ```
      *     The `amount` field can also be an expression.
      * @param af Not used.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `amount` field.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAGiveItem {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EAGiveItem {
         if (obj['itemId'] == undefined) throw new Error('Missing item id.');
         // We allow amount to be an expression.
         if (typeof obj['amount'] !== 'string' && typeof obj['amount'] !== 'number') {
@@ -656,10 +714,13 @@ export class EAUpdateItemAmounts extends EventAction {
      *     }
      *     ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec The event expression compiler for compiling expressions from 
      *     the `updates` map.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAUpdateItemAmounts {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EAUpdateItemAmounts {
         if (obj['updates'] == undefined) throw new Error('Missing update definitions.');
         let itemIds: string[] = [];
         let updateExprs: CompiledEventExpression[] = [];
@@ -709,9 +770,12 @@ export class EAEndGame extends EventAction {
      *     }
      *     ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EAEndGame {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EAEndGame {
         if (typeof(obj['message']) !== 'string') throw new Error('Missing message.');
         if (typeof(obj['confirm']) !== 'string') throw new Error('Missing confirm message.');
         if (typeof(obj['winning']) !== 'boolean') throw new Error('Missing winning status.');
@@ -749,9 +813,12 @@ export class EASetStatus extends EventAction {
      *     }
      *     ```
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
-    static fromJSONObject(obj: any, af: EventActionFactory, ec: EventExpressionCompiler): EASetStatus {
+    static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
+                          ec: EventExpressionCompiler): EASetStatus {
         if (typeof(obj['statusId']) !== 'string') throw new Error('Missing status id.');
         if (typeof(obj['on']) !== 'boolean') throw new Error('Missing on/off indicator.');
         return new EASetStatus(obj['statusId'], obj['on']);
@@ -823,9 +890,11 @@ export class EATriggerEvents extends EventAction {
      *     The default priority is 0. Triggers with higher priorities with be
      *     processed earlier than those with lower priorities.
      * @param af Not used.
+     * @param cf Not used.
      * @param ec Not used.
      */
     static fromJSONObject(obj: any, af: EventActionFactory,
+                          cf: EventConditionFactory,
                           ec: EventExpressionCompiler): EATriggerEvents {
         let priorityByTriggerId: Record<string, number> = {};
         if (!obj['triggers'] || !Array.isArray(obj['triggers'])) {

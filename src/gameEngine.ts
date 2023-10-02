@@ -43,9 +43,13 @@ export class GameEngine {
                                         this._statusRegistry,
                                         this._config.initialRandomSeed);
         this._expressionEngine = new EventExpressionEngine(this._gameState);
-        this._eventEngine = new GameEventEngine(this._gameState, this._actionProxy, this._expressionEngine);
-        this._actionFactory = new EventActionFactory(this._expressionEngine);
-        this._conditionFactory = new EventConditionFactory(this._expressionEngine);
+        this._eventEngine = new GameEventEngine(this._gameState,
+                                                this._actionProxy,
+                                                this._expressionEngine);
+        this._conditionFactory = 
+            new EventConditionFactory(this._expressionEngine);
+        this._actionFactory = new EventActionFactory(this._conditionFactory,
+                                                     this._expressionEngine);
     }
 
     /**
