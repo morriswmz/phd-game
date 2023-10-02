@@ -101,7 +101,8 @@ export class GameState {
         let oldValue = this._variables[varName];
         this._variables[varName] = value;
         if (oldValue !== value) {
-            setTimeout(() => this.dispatchChangeEvent(new VariableChangedEvent(false, varName, oldValue, value)), 0);
+            const e = new VariableChangedEvent(false, varName, oldValue, value);
+            setTimeout(() => this.dispatchChangeEvent(e), 0);
         }
     }
 
@@ -118,6 +119,18 @@ export class GameState {
             throw new Error('Lower bound cannot be greater than upper bound.');
         }
         this._varLimits[varName] = [lb, ub];
+        // Clamp the existing value if exists.
+        if (!(varName in this._variables)) return;
+        const oldValue = this._variables[varName];
+        if (oldValue < lb) {
+            this._variables[varName] = lb;
+            const e = new VariableChangedEvent(false, varName, oldValue, lb);
+            setTimeout(() => this.dispatchChangeEvent(e), 0);
+        } else if (oldValue > ub) {
+            this._variables[varName] = ub;
+            const e = new VariableChangedEvent(false, varName, oldValue, ub);
+            setTimeout(() => this.dispatchChangeEvent(e), 0);
+        }
     }
 
     /**
