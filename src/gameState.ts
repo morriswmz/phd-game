@@ -3,6 +3,7 @@ import * as seedrandom from 'seedrandom';
 import { JSONSerializable } from './utils/jsonSerializable';
 import { Inventory, ItemRegistry } from './effect/item';
 import { StatusTable, StatusRegistry } from './effect/status';
+import { PriorityQueue } from './utils/priorityQueue';
 
 export enum EndGameState {
     None,
@@ -29,10 +30,24 @@ export class VariableChangedEvent {
 
 type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) => void;
 
+interface PendingTrigger {
+    id: string;
+    priority: number;
+    order: number;
+    probability: number;
+}
+
+function comparePendingTrigger(a: PendingTrigger, b: PendingTrigger): boolean {
+    if (a.priority !== b.priority) return a.priority < b.priority;
+    if (a.order !== b.order) return a.order > b.order;
+    return a.id < b.id;
+}
+
 export class GameState {
 
     private _occurredEvents: Record<string, number> = {};
-    private _pendingTriggers: Record<string, number> = {};
+    private _pendingTriggers: PriorityQueue<PendingTrigger>;
+    private _pendingTriggerOrder: number = 0;
     private _playerInventory: Inventory;
     private _playerStatus: StatusTable;
     private _variables: Record<string, number> = {};
@@ -47,6 +62,7 @@ export class GameState {
 
     constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry,
                 randomSeed?: string) {
+        this._pendingTriggers = new PriorityQueue(comparePendingTrigger);
         this._playerInventory = new Inventory(itemRegistry);
         this._playerStatus = new StatusTable(statusRegistry);
         if (randomSeed) {
@@ -158,42 +174,35 @@ export class GameState {
     }
 
     /**
-     * Adds a new pending trigger. If the give trigger id already exists, its
-     * priority will be updated to be the maximum between the existing priority
-     * and the new priority.
+     * Pushes a new pending trigger to the queue.
      * @param triggerId Trigger id.
+     * @param probability Probability of triggering.
      * @param priority Priority.
      */
-    addPendingTrigger(triggerId: string, priority: number): void {
-        if (triggerId in this._pendingTriggers) {
-            this._pendingTriggers[triggerId] = Math.max(
-                this._pendingTriggers[triggerId], priority);
-        } else {
-            this._pendingTriggers[triggerId] = priority;
-        }
-    }
-
-    /**
-     * Returns all pending triggers in an array, sorted by priority in
-     * descending order.
-     */
-    getPendingTriggers(): string[] {
-        let sortedTriggerIds = Object.keys(this._pendingTriggers);
-        sortedTriggerIds.sort((a, b) => {
-            const priorityA = this._pendingTriggers[a];
-            const priorityB = this._pendingTriggers[b];
-            if (priorityA !== priorityB) return priorityA > priorityB ? -1 : 1;
-            if (a === b) return 0;
-            return a < b ? -1 : 1;
+    pushPendingTrigger(triggerId: string, probability: number,
+                       priority: number): void {
+        this._pendingTriggers.push({
+            'id': triggerId,
+            'priority': priority,
+            'order': this._pendingTriggerOrder++,
+            'probability': probability
         });
-        return sortedTriggerIds;
     }
 
     /**
-     * Clears all pending triggers.
+     * Pops one pending trigger from the queue.
+     * @returns A pair of (trigger id, probability).
      */
-    clearPendingTriggers(): void {
-        this._pendingTriggers = {};
+    popPendingTrigger(): [string, number] {
+        const pendingTrigger = this._pendingTriggers.pop();
+        return [pendingTrigger.id, pendingTrigger.probability];
+    }
+
+    /**
+     * Checks if there exists any pending trigger.
+     */
+    hasPendingTrigger(): boolean {
+        return !this._pendingTriggers.empty();
     }
 
     /**
@@ -206,7 +215,8 @@ export class GameState {
         this.playerInventory.clear();
         this.playerStatus.clear();
         this._occurredEvents = {};
-        this.clearPendingTriggers();
+        this._pendingTriggers.clear();
+        this._pendingTriggerOrder = 0;
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
@@ -237,9 +247,12 @@ export class GameState {
         lines.push('[Occurred Events]');
         lines.push(Object.keys(this._occurredEvents).join(', '));
         lines.push('[Pending Triggers]');
-        for (let triggerId in this._pendingTriggers) {
-            const priority = this._pendingTriggers[triggerId];
-            lines.push(`"${triggerId}" with priority ${priority}`);
+        if (this.hasPendingTrigger()) {
+            const top = this._pendingTriggers.top();
+            const pendingCount = this._pendingTriggers.length;
+            lines.push(`"${top.id}" and ${pendingCount - 1} more.`);
+        } else {
+            lines.push('None');
         }
         lines.push('[Seed]');
         lines.push(this._randomSeed);

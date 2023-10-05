@@ -163,13 +163,14 @@ export class GameEngine {
         }
         this._gameState.playerStatus.tick();
         await this._eventEngine.trigger('Tick');
-        while (true) {
-            const pendingTriggers = this._gameState.getPendingTriggers();
-            if (pendingTriggers.length === 0) break;
-            this._gameState.clearPendingTriggers();
-            for (const triggerId of pendingTriggers) {
-                await this._eventEngine.trigger(triggerId);
+        while (this._gameState.hasPendingTrigger()) {
+            const [id, probability] = this._gameState.popPendingTrigger();
+            if (probability <= 0) continue;
+            if (probability < 1 &&
+                this._gameState.nextRandomNumber() > probability) {
+                continue;
             }
+            await this._eventEngine.trigger(id);
         }
     }
     

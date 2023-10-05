@@ -941,39 +941,50 @@ export class EASetStatus extends EventAction {
 
 }
 
+interface TriggerInfo {
+    id: string;
+    priority: number;
+    probability?: CompiledEventExpression;
+}
+
 /**
  * Triggers one or more events via one or more trigger ids.
  * 
  * IMPORTANT: Game events will be triggered asynchronously instead of
  * synchronously:
  * 
- * 1. Each trigger id listed in this action will be pushed to a queue and
- *    processed after all game events from the ongoing trigger are handled.
- * 2. The processing order is determined by priority (trigger ids with higher
+ * 1. Each trigger id listed in this action will be pushed to a queue in order
+ *    and processed after all game events from the ongoing trigger are handled.
+ * 2. The same trigger id can be used multiple times if you need certain game
+ *    events to be triggered multiple times.
+ * 3. The processing order is determined by priority (trigger ids with higher
  *    priorities will be processed earlier than those with lower priorities).
- * 3. When multiple priorities are defined for the same trigger id, the highest
- *    one will be picked.
+ *    In case of ties, use the time when they are pushed into the queue.
  * 
  * Example:
  * 
- * Suppose you define a game event named "OnTick" triggered by "Tick", which
- * contains an event action that triggers (1) "AfterTickA" with priority 100,
- * and (2) "AfterTickB" with priority 200.
+ * Suppose you define a game event named "HandleTick" triggered by "Tick", which
+ * contains a `TriggerEvents` action with the following trigger definitions in
+ * order:
  * 
- * Suppose you also define another game event named "OnAfterTickA" triggered by
- * "AfterTickA", which contains an event action that triggers "AfterTickC" with
- * priority 50.
+ * (1) "A" with priority 100;
+ * (2) "B" with priority 100;
+ * (3) "C" with priority 200.
  * 
- * Then after "Tick" is triggered, the following will happen in order:
+ * Suppose you also define another game event named "HandleA" triggered by
+ * "A", which contains an event action that triggers "C" with priority 50.
  * 
- * 1. All event actions under "OnTick" will be executed;
- * 2. All event actions under "AfterTickB" will be executed;
- * 3. All event actions under "AfterTickA" will be executed;
- * 4. All event actions under "AfterTickC" will be executed.
+ * Then after "Tick" is triggered,
+ * 
+ * 1. "C" is triggered;
+ * 2. "A" is triggered;
+ * 3. "B" is triggered;
+ * 4. "C" is triggered.
  */
 export class EATriggerEvents extends EventAction {
 
-    constructor(private _priorityByTriggerId: Record<string, number>) {
+
+    constructor(private _triggerInfoList: TriggerInfo[]) {
         super();
     }
 
@@ -989,13 +1000,18 @@ export class EATriggerEvents extends EventAction {
      *         "triggers": [
      *             {
      *                 "id": string,
-     *                 "priority": number | undefined
+     *                 "priority": number | undefined,
+     *                 "probability": number | string | undefined
      *             }
      *         ]
      *     }
      *     ```
-     *     The default priority is 0. Triggers with higher priorities with be
-     *     processed earlier than those with lower priorities.
+     *     The default `priority` is 0. Triggers with higher priorities with be
+     *     processed earlier than those with lower priorities. In case of same
+     *     priorities, triggers defined first will be processed first.
+     *     `probability` defaults to 1 if not set, meaning the 100% chance of
+     *     triggering. It can also be an expression that will be evaluated when
+     *     the event action is executed.
      * @param af Not used.
      * @param cf Not used.
      * @param ec Not used.
@@ -1003,7 +1019,7 @@ export class EATriggerEvents extends EventAction {
     static fromJSONObject(obj: any, af: EventActionFactory,
                           cf: EventConditionFactory,
                           ec: EventExpressionCompiler): EATriggerEvents {
-        let priorityByTriggerId: Record<string, number> = {};
+        let triggerInfoList: TriggerInfo[] = [];
         if (!obj['triggers'] || !Array.isArray(obj['triggers'])) {
             throw new Error('Missing trigger definitions.');
         }
@@ -1016,21 +1032,29 @@ export class EATriggerEvents extends EventAction {
             if (typeof priority !== 'number' || isNaN(priority)) {
                 throw new Error('Priority must be a valid number.');
             }
-            if (triggerId in priorityByTriggerId) {
-                priorityByTriggerId[triggerId] = Math.max(
-                    priorityByTriggerId[triggerId], priority);
-            } else {
-                priorityByTriggerId[triggerId] = priority;
+            let triggerInfo: TriggerInfo = {
+                "id": triggerId,
+                "priority": priority
+            };
+            let probability = trigger['probability'];
+            if (probability != undefined) {
+                if (typeof probability !== 'string' &&
+                    typeof probability !== 'number') {
+                    throw new Error('Invalid probability definition.');
+                }
+                triggerInfo['probability'] = ec.compile(probability);
             }
+            triggerInfoList.push(triggerInfo);
         }
-        return new EATriggerEvents(priorityByTriggerId);
+        return new EATriggerEvents(triggerInfoList);
     }
 
     async execute(gs: GameState, ap: GuiActionProxy,
                   ee: EventExpressionEvaluator): Promise<void> {
-        for (const triggerId in this._priorityByTriggerId) {
-            gs.addPendingTrigger(triggerId,
-                                 this._priorityByTriggerId[triggerId]);
+        for (const trigger of this._triggerInfoList) {
+            const probability = trigger.probability == undefined
+                ? 1.0 : ee.eval(trigger.probability)
+            gs.pushPendingTrigger(trigger.id, probability, trigger.priority);
         }
     }
 
