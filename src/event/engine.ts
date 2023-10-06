@@ -1,6 +1,6 @@
 import { GameEvent, GuiActionProxy, EventAction } from './core';
 import { GameState, EndGameState } from '../gameState';
-import { EventExpressionEvaluator, EventExpressionEngine } from './expression';
+import { EventExpressionEngine } from './expression';
 
 export class GameEventEngine {
 
@@ -75,8 +75,12 @@ export class GameEventEngine {
             }
             if (skip) continue;
             // Randomness
-            const p = typeof e.probability === 'number' ? e.probability : this._exprEngine.eval(e.probability);
-            if (this._gameState.nextRandomNumber() > p) continue;
+            const p = typeof e.probability === 'number'
+                ? e.probability
+                : this._exprEngine.eval(e.probability);
+            if (p <= 0 || (p < 1 && this._gameState.nextRandomNumber() > p)) {
+                continue;
+            }
             // Add exclusions
             for (let ex of e.exclusions) {
                 exclusions[ex] = true;
