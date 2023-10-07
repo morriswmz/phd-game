@@ -69,17 +69,16 @@ em {
     flex-direction: row;
     justify-content: space-evenly;
 }
-#stats_bar > div {
-    margin: 0 1em;
-}
 #stats_bar p {
-    margin: 0 0.5em;
+    margin: 0;
     padding: 0;
 }
 #stats_left {
+    margin: 0 0.5em 0 0;
     text-align: left;
 }
 #stats_right {
+    margin: 0 0 0 0.5em;
     text-align: right;
 }
 .warning {
