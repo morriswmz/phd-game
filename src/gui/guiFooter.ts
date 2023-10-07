@@ -4,11 +4,13 @@ import { GameTextEngine } from "./textEngine";
 
 export interface GuiFooterLinkButtonDefinition {
   text: string;
+  styleClasses?: string[];
   url: string;
 }
 
 export interface GuiFooterMessageButtonDefinition {
   text: string;
+  styleClasses?: string[];
   messageTitle: string;
   message: string;
   confirmText: string;
@@ -43,6 +45,14 @@ export class GuiFooter extends GuiBase<HTMLElement> {
       }
       let button = document.createElement('a');
       button.innerHTML = textRenderer.localizeAndRender(buttonDef.text);
+      if ('styleClasses' in buttonDef) {
+        if (!Array.isArray(buttonDef.styleClasses)) {
+          throw new Error("Style classes should be an array.");
+        }
+        for (let style of buttonDef.styleClasses) {
+          button.classList.add(style);
+        }
+      }
       if ('url' in buttonDef) {
         button.href = buttonDef.url;
       } else {
