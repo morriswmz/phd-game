@@ -5,6 +5,10 @@ import { Item } from '../effect/item';
 import { GameTextEngine } from './textEngine';
 import { Status } from '../effect/status';
 
+interface GuiEffectProviderListDefinition {
+    title: string;
+}
+
 /**
  * Abstract base class for item list and status list.
  */
@@ -15,15 +19,21 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
     protected _collection: EffectProviderCollection<T>;
     protected _registry: SimpleRegistry<T>;
 
-    constructor(container: HTMLElement,
-                textEngine: GameTextEngine,
+    constructor(container: HTMLElement, textEngine: GameTextEngine,
                 collection: EffectProviderCollection<T>,
-                registry: SimpleRegistry<T>)
-    {   
+                registry: SimpleRegistry<T>,
+                definition?: GuiEffectProviderListDefinition) {
         super(container, textEngine);
         this._collection = collection;
         this._registry = registry;
         this._titleContainer = this.createAndAddChild('h3');
+        if (definition) {
+            if (typeof definition['title'] !== 'string') {
+                throw new Error("Title must be a string.");
+            }
+            this._titleContainer.innerHTML =
+                textEngine.localizeAndRender(definition.title);
+        }
         this._listContainer = this.createAndAddChild('ul');
         this._collection.onChanged = (collection, e) => {
             this.renderList(collection, e);
@@ -32,23 +42,24 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
         this._listContainer.onclick = e => {
             let target = e.target;
             if (target instanceof HTMLLIElement && this.onItemClicked) {
-                this.onItemClicked(this.retrieveEffectProviderFromElement(target));
+                this.onItemClicked(
+                    this.retrieveEffectProviderFromElement(target));
             } 
         };
     }
 
+    /**
+     * Specifies the callback function to handle item clicks.
+     */
     onItemClicked?: (item: T) => void;
 
-    setTitle(title: string): void {
-        this._titleContainer.innerHTML = this._textEngine.localizeAndRender(title);
-    }
-    
     /**
      * Renders the list.
      * @param collection Effect provider collection.
      * @param e Collection changed event.
      */
-    abstract renderList(collection: EffectProviderCollection<T>, e: EffectProviderCollectionChangedEvent<T>): void;
+    abstract renderList(collection: EffectProviderCollection<T>,
+                        e: EffectProviderCollectionChangedEvent<T>): void;
 
     /**
      * Retrieves the effect provider instance based on the given HTML li element.
@@ -58,24 +69,78 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
 
 }
 
+interface RaritySpecificStyle {
+    // Minimum rarity required to apply the style (inclusive).
+    // Defaults to -Infinity if not set.
+    minRarity?: number;
+    // Maximum rarity allowed to apply the style (inclusive).
+    // Defaults to Infinity if not set.
+    maxRarity?: number;
+    styleClasses: string[];
+}
+
+export interface GuiItemListDefinition extends GuiEffectProviderListDefinition {
+    // Style classes to apply based on rarity. Evaluated in order.
+    raritySpecificStyles?: RaritySpecificStyle[];
+}
+
 export class GuiItemList extends GuiEffectProviderList<Item> {
 
-    renderList(collection: EffectProviderCollection<Item>, e: EffectProviderCollectionChangedEvent<Item>): void {
+    private _raritySpecificStyles: Required<RaritySpecificStyle>[] = [];
+
+    constructor(container: HTMLElement, textEngine: GameTextEngine,
+                collection: EffectProviderCollection<Item>,
+                registry: SimpleRegistry<Item>,
+                definition?: GuiItemListDefinition) {
+        super(container, textEngine, collection, registry, definition);
+        if (definition == undefined ||
+            definition['raritySpecificStyles'] == undefined) {
+            return;
+        }
+        if (!Array.isArray(definition['raritySpecificStyles'])) {
+            throw new Error('raritySpecificStyles must be an array.');
+        }
+        for (let style of definition['raritySpecificStyles']) {
+            const minRarity = style['minRarity'] == undefined
+                ? -Infinity
+                : style['minRarity'];
+            const maxRarity = style['maxRarity'] == undefined
+                ? Infinity
+                : style['maxRarity'];
+            if (!Array.isArray(style['styleClasses'])) {
+                throw new Error('styleClasses must be an array.');
+            }
+            for (const styleClass of style['styleClasses']) {
+                if (typeof styleClass !== 'string') {
+                    throw new Error(
+                        'styleClasses must be an array of strings.');
+                }
+            }
+            this._raritySpecificStyles.push({
+                minRarity: minRarity,
+                maxRarity: maxRarity,
+                styleClasses: [...style['styleClasses']]
+            });
+        }
+    }
+
+    renderList(collection: EffectProviderCollection<Item>,
+               e: EffectProviderCollectionChangedEvent<Item>): void {
         this.removeAllChildrenOf(this._listContainer);
         if (e.clear) return;
         for (const itemId in collection.items) {
             let node = document.createElement('li');
-            let item = collection.items[itemId];
-            node.setAttribute('data-item-id', item[0].id);
-            // Set styles based on the item rarity.
-            if (item[0].rarity >= 10) {
-                node.className = 'r_legendary';
-            } else if (item[0].rarity >= 6) {
-                node.className = 'r_rare';
-            } else if (item[0].rarity >= 3) {
-                node.className = 'r_uncommon';
+            let [item, count] = collection.items[itemId];
+            node.setAttribute('data-item-id', item.id);
+            for (const style of this._raritySpecificStyles) {
+                if (item.rarity >= style.minRarity &&
+                    item.rarity <= style.maxRarity) {
+                    node.classList.add(...style.styleClasses);
+                }
             }
-            node.innerHTML = this._textEngine.localizeAndRender(item[0].unlocalizedName) + ' x' + item[1].toString();
+            const localizedItemName =
+                this._textEngine.localizeAndRender(item.unlocalizedName);
+            node.innerHTML = `${localizedItemName} x${count}`;
             this._listContainer.appendChild(node);
         }
     }
@@ -86,15 +151,26 @@ export class GuiItemList extends GuiEffectProviderList<Item> {
 
 }
 
+export interface GuiStatusListDefinition extends GuiEffectProviderListDefinition {}
+
 export class GuiStatusList extends GuiEffectProviderList<Status> {
 
-    renderList(collection: EffectProviderCollection<Status>, e: EffectProviderCollectionChangedEvent<Status>): void {
+    constructor(container: HTMLElement, textEngine: GameTextEngine,
+                collection: EffectProviderCollection<Status>,
+                registry: SimpleRegistry<Status>,
+                definition?: GuiStatusListDefinition) {
+        super(container, textEngine, collection, registry, definition);
+    }
+
+    renderList(collection: EffectProviderCollection<Status>,
+               e: EffectProviderCollectionChangedEvent<Status>): void {
         this.removeAllChildrenOf(this._listContainer);
         if (e.clear) return;
         for (const itemId in collection.items) {
             let node = document.createElement('li');
             let status = collection.items[itemId];
-            node.innerHTML = this._textEngine.localizeAndRender(status[0].unlocalizedName);
+            node.innerHTML =
+                this._textEngine.localizeAndRender(status[0].unlocalizedName);
             node.setAttribute('data-status-id', itemId);
             this._listContainer.appendChild(node);
         }

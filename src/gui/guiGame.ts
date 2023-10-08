@@ -3,7 +3,7 @@ import { GuiModalBox } from './guiModalBox';
 import { GuiBase } from './guiBase';
 import { GameEngine } from '../gameEngine';
 import { GuiMessageWindow } from './guiMessageWindow';
-import { GuiItemList, GuiStatusList } from './guiEffectProviderList';
+import { GuiItemList, GuiItemListDefinition, GuiStatusList, GuiStatusListDefinition } from './guiEffectProviderList';
 import { GuiFX } from './guiFx';
 import { GameTextEngine } from './textEngine';
 import { GuiFooter, GuiFooterDefinition } from './guiFooter';
@@ -11,6 +11,8 @@ import { GuiStatsBar, GuiStatsBarDefinition } from './guiStatsBar';
 
 export interface GuiGameWindowDefinition {
     statsBar?: GuiStatsBarDefinition;
+    itemList?: GuiItemListDefinition;
+    statusList?: GuiStatusListDefinition;
     footer?: GuiFooterDefinition;
 }
 
@@ -49,11 +51,11 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
         this._itemList = new GuiItemList(
             this.retrieveElement('items_window'), textEngine,
             this._gameEngine.gameState.playerInventory,
-            this._gameEngine.itemRegistry);
+            this._gameEngine.itemRegistry, definition.itemList);
         this._statusList = new GuiStatusList(
             this.retrieveElement('status_window'), textEngine,
             this._gameEngine.gameState.playerStatus,
-            this._gameEngine.statusRegistry);
+            this._gameEngine.statusRegistry, definition.statusList);
         this._footer = new GuiFooter(
             this.retrieveElement('footer'), textEngine, this._modalBox,
             definition.footer);
@@ -91,11 +93,6 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             default:
                 throw new Error(`Unknown fx "${fx}".`);
         }
-    }
-
-    updateUIText(): void {
-        this._itemList.setTitle('ui.items');
-        this._statusList.setTitle('ui.status');        
     }
 
     retrieveElement<T extends HTMLElement>(id: string): T {

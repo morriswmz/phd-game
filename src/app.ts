@@ -50,7 +50,6 @@ class App {
         let gui = new GuiGameWindow(this._container, textEngine,
                                     this._gameEngine, guiDef);
         this._actionProxy.attachGui(gui);       
-        gui.updateUIText();
         await this._gameEngine.start(false);
         const gameLoop = () => {
             setTimeout(() => this._gameEngine.tick().then(gameLoop), 50);

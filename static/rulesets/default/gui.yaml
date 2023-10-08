@@ -16,6 +16,19 @@ statsBar:
     side: right
     updateTrigger:
       variables: ["year", "month"]
+itemList:
+  title: ui.items
+  raritySpecificStyles:
+    - minRarity: 10
+      styleClasses: ["r_legendary"]
+    - minRarity: 6
+      maxRarity: 9
+      styleClasses: ["r_rare"]
+    - minRarity: 3
+      maxRarity: 5
+      styleClasses: ["r_uncommon"]
+statusList:
+  title: ui.status
 footer:
   preamble:
   buttons:
