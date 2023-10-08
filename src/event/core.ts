@@ -28,26 +28,41 @@ export interface GuiActionProxy {
 }
 
 /**
- * Represents an action.
- * The implementation should be stateless and only contain necessary
+ * Context needed to evaluate an `EventCondition`.
+ */
+export interface EventConditionEvaluationContext {
+    readonly gameState: GameState;
+    readonly evaluator: EventExpressionEvaluator;
+}
+
+/**
+ * Represents a condition.
+ * The implementation should be stateless and only storing necessary
  * definitions.
  */
-export abstract class EventAction {
+export abstract class EventCondition {
 
-    async execute(gs: GameState, ap: GuiActionProxy, ee: EventExpressionEvaluator): Promise<void> {
+    check(context: EventConditionEvaluationContext): boolean {
         throw new Error('Not implemented.');
     }
 
 }
 
 /**
- * Represents a condition.
- * The implementation should be stateless and only contain necessary
+ * Context needed to execute an `EventAction`.
+ */
+export interface EventActionExecutionContext extends EventConditionEvaluationContext {
+    readonly actionProxy: GuiActionProxy;
+}
+
+/**
+ * Represents an action.
+ * The implementation should be stateless and only storing necessary
  * definitions.
  */
-export abstract class EventCondition {
+export abstract class EventAction {
 
-    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
+    async execute(context: EventActionExecutionContext): Promise<void> {
         throw new Error('Not implemented.');
     }
 

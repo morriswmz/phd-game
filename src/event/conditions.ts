@@ -1,9 +1,15 @@
 import { GameState } from '../gameState';
-import { EventCondition } from './core';
+import { EventCondition, EventConditionEvaluationContext } from './core';
 import { EventExpressionEvaluator, EventExpressionFunctionTable, CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { CompiledExpression, compileExpression } from '../utils/expression';
 
-type EventConditionDeserializer = (obj: any, factory: EventConditionFactory, ec: EventExpressionCompiler) => EventCondition;
+interface EventConditionDeserializationContext {
+    conditionFactory: EventConditionFactory;
+    expressionCompiler: EventExpressionCompiler;
+}
+
+type EventConditionDeserializer =
+    (obj: any, context: EventConditionDeserializationContext) => EventCondition;
 
 export interface EventConditionDeserializerDefinition {
     ID: string;
@@ -12,25 +18,30 @@ export interface EventConditionDeserializerDefinition {
 
 export class EventConditionFactory {
 
-    private _converters: { [key: string]: EventConditionDeserializer; } = {};
-    private _exprCompiler: EventExpressionCompiler;
+    private _deserializers: Map<string, EventConditionDeserializer> = new Map();
+    private _deserializationContext: EventConditionDeserializationContext;
 
-    constructor(exprCompiler: EventExpressionCompiler) {
-        this._exprCompiler = exprCompiler;
+    constructor(expressionCompiler: EventExpressionCompiler) {
+        this._deserializationContext = {
+            conditionFactory: this,
+            expressionCompiler: expressionCompiler
+        };
     }
 
     registerDeserializer(def: EventConditionDeserializerDefinition) : void {
-        this._converters[def.ID] = def.fromJSONObject;
+        this._deserializers.set(def.ID, def.fromJSONObject);
     }
 
     fromJSONObject(obj: any): EventCondition {
-        if (!obj['id']) {
-            throw new Error('Condition id is not specified.');
+        const conditionId = obj['id'];
+        if (conditionId == undefined || typeof conditionId !== 'string') {
+            throw new Error('Condition id must be a string.');
         }
-        if (!this._converters[obj['id']]) {
-            throw new Error(`Cannot construct the event condition for "${obj['id']}".`);
+        const deserializer = this._deserializers.get(conditionId);
+        if (deserializer == undefined) {
+            throw new Error(`No deserializer defined for "${conditionId}".`);
         }
-        return this._converters[obj['id']](obj, this, this._exprCompiler);
+        return deserializer(obj, this._deserializationContext);
     }
 
 }
@@ -46,15 +57,21 @@ export class ECExpression extends EventCondition {
 
     static ID = 'Expression';
     
-    static fromJSONObject(obj: any, cf: EventConditionFactory, ec: EventExpressionCompiler): EventCondition {
-        if (obj['expression'] == undefined || typeof obj['expression'] !== 'string') {
+    static fromJSONObject(obj: any, context: EventConditionDeserializationContext): ECExpression {
+        const expression = obj['expression'];
+        if (obj['expression'] == undefined) {
             throw new Error('Missing expression.');
         }
-        return new ECExpression(ec.compile(obj['expression']));
+        if (typeof obj['expression'] !== 'number' &&
+            typeof obj['expression'] !== 'string') {
+            throw new Error('Expression must be a number or string.');
+        }
+        return new ECExpression(
+            context.expressionCompiler.compile(obj['expression']));
     }
 
-    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
-        return !!ee.eval(this._expression);
+    check(context: EventConditionEvaluationContext): boolean {
+        return !!context.evaluator.eval(this._expression);
     }
 
 }
@@ -63,9 +80,9 @@ export class ECAll extends EventCondition {
     
     private _conditions: EventCondition[] = [];
 
-    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
+    check(context: EventConditionEvaluationContext): boolean {
         for (let cond of this._conditions) {
-            if (!cond.check(gs, ee)) return false; 
+            if (!cond.check(context)) return false; 
         }
         return true;
     }
@@ -76,9 +93,9 @@ export class EAAny extends EventCondition {
     
     private _conditions: EventCondition[] = [];
 
-    check(gs: GameState, ee: EventExpressionEvaluator): boolean {
+    check(context: EventConditionEvaluationContext): boolean {
         for (let cond of this._conditions) {
-            if (cond.check(gs, ee)) return true;
+            if (cond.check(context)) return true;
         }
         return false;
     }

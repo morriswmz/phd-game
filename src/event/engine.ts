@@ -1,4 +1,4 @@
-import { GameEvent, GuiActionProxy, EventAction } from './core';
+import { GameEvent, GuiActionProxy, EventAction, EventActionExecutionContext } from './core';
 import { GameState, EndGameState } from '../gameState';
 import { EventExpressionEngine } from './expression';
 
@@ -11,11 +11,18 @@ export class GameEventEngine {
     private _actionProxy: GuiActionProxy;
     // Event actions and condition have access to the same expression evaluator.
     private _exprEngine: EventExpressionEngine;
+    private _executionContext: EventActionExecutionContext;
 
-    constructor(gs: GameState, ap: GuiActionProxy, exprEngine: EventExpressionEngine) {
-        this._gameState = gs;
-        this._actionProxy = ap;
-        this._exprEngine = exprEngine;
+    constructor(gameState: GameState, actionProxy: GuiActionProxy,
+                expressionEngine: EventExpressionEngine) {
+        this._gameState = gameState;
+        this._actionProxy = actionProxy;
+        this._exprEngine = expressionEngine;
+        this._executionContext = {
+            gameState: gameState,
+            actionProxy: actionProxy,
+            evaluator: expressionEngine
+        };
     }
 
     public onActionExecuted: ((gs: GameState) => void ) | undefined = undefined;
@@ -68,7 +75,7 @@ export class GameEventEngine {
             // Check all the conditions.
             let skip = false;
             for (let c of e.conditions) {
-                if (!c.check(this._gameState, this._exprEngine)) {
+                if (!c.check(this._executionContext)) {
                     skip = true;
                     break;
                 }
@@ -102,7 +109,7 @@ export class GameEventEngine {
 
     async executeActions(actions: EventAction[]): Promise<boolean> {
         for (let a of actions) {
-            await a.execute(this._gameState, this._actionProxy, this._exprEngine);
+            await a.execute(this._executionContext);
             if (this.onActionExecuted) this.onActionExecuted(this._gameState);
             if (this._gameState.endGameState !== EndGameState.None) {
                 // Stop processing further actions or events
