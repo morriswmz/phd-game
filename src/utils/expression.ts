@@ -173,7 +173,7 @@ export interface ExpressionCompiler<T extends FunctionTable> {
  */
 export function compileExpression<T extends FunctionTable>(expr: string, fp: FunctionTableProvider<T>): CompiledExpression<T> {
     const tokens = tokenize(expr);
-    let funcBody = 'return (';
+    let funcBody = '"use strict";\nreturn (';
     let idx = 0;
     while (idx < tokens.length) {
         const curToken = tokens[idx];

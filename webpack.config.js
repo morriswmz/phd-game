@@ -8,9 +8,11 @@ module.exports = {
     resolve: {
         extensions: ['.ts', '.js']
     },
+    target: ['web', 'es6'],
     output: {
         filename: "app.bundle.js",
-        path: path.join(__dirname, 'dist')
+        path: path.join(__dirname, 'dist'),
+        clean: true
     },
     devtool: "source-map",
     module: {
