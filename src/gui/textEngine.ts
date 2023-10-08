@@ -33,6 +33,11 @@ export interface GameTextEngine {
      * @param src Source text.
      */
     localize(src: string): string;
+
+    /**
+     * Gets the underlying localization dictionary.
+     */
+    getLocalizationDictionary(): LocalizationDictionary;
 }
 
 export class SimpleGameTextEngine implements GameTextEngine {
@@ -75,6 +80,10 @@ export class SimpleGameTextEngine implements GameTextEngine {
     
     localize(src: string): string {
         return this._ldict.translate(src);
+    }
+
+    getLocalizationDictionary(): LocalizationDictionary {
+        return this._ldict;
     }
 
     private _evalSpecialVariable(varName: string): string | undefined {
