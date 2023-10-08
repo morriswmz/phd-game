@@ -60,6 +60,7 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
             let icon = typeof itemDef['icon'] === 'string' ? itemDef['icon'] : '';
             this.add(new Item(itemDef['id'], rarity, icon, effects));
         }
+        console.log(`Successfully registered ${itemDefs.length} items.`);
     }
 
 }

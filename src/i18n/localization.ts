@@ -48,6 +48,7 @@ export class LocalizationDictionary {
         if (obj == undefined) {
             throw new Error(`Failed to load translation file from: ${url}`);
         }
+        let nTranslations = 0;
         for (let translationKey in obj) {
             const translation = obj[translationKey];
             if (typeof translation !== 'string') {
@@ -55,7 +56,9 @@ export class LocalizationDictionary {
                     `Translation of "${translationKey}" should be a string.`);
             }
             this.addTranslation(translationKey, translation);
+            ++nTranslations;
         }
+        console.log(`Successfully loaded ${nTranslations} translations.`);
     }
 
 }

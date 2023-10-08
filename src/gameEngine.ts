@@ -111,6 +111,8 @@ export class GameEngine {
             const events = await eventLoader.load(
                 this._config.eventDefinitionUrl);
             this._eventEngine.registerEvents(events);
+            console.log(
+                `Successfully registered ${events.length} game events.`);
         } else {
             console.warn('Missing event definitions. No events loaded.');
         }

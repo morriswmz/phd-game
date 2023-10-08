@@ -60,6 +60,7 @@ export class StatusRegistry extends EffectProviderRegistry<Status> {
             let icon = typeof statusDef['icon'] === 'string' ? statusDef['icon'] : '';
             this.add(new Status(statusDef['id'], duration, icon, effects));
         }
+        console.log(`Successfully registered ${statusDefs.length} status.`);
     }
 
 }
