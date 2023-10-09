@@ -2,11 +2,16 @@ import { GameEvent, GuiActionProxy, EventAction, EventActionExecutionContext } f
 import { GameState, EndGameState } from '../gameState';
 import { EventExpressionEngine } from './expression';
 
+interface GameEventInfo {
+    event: GameEvent;
+    disabled: boolean;
+}
+
 export class GameEventEngine {
 
-    private _events: { [key: string]: GameEvent[]; } = {};
+    private _eventsByTrigger: Map<string, GameEvent[]> = new Map();
     // id => (GameEvent, disabled)
-    private _eventIdMap: { [key: string]: [GameEvent, boolean]; } = {};
+    private _eventInfoById: Map<string, GameEventInfo> = new Map();
     private _gameState: GameState;
     private _actionProxy: GuiActionProxy;
     // Event actions and condition have access to the same expression evaluator.
@@ -28,8 +33,8 @@ export class GameEventEngine {
     public onActionExecuted: ((gs: GameState) => void ) | undefined = undefined;
     
     enableAll(): void {
-        for (let id in this._eventIdMap) {
-            this._eventIdMap[id][1] = false;
+        for (let info of this._eventInfoById.values()) {
+            info.disabled = false;
         }
     }
 
@@ -40,20 +45,44 @@ export class GameEventEngine {
     }
 
     registerEvent(e: GameEvent): void {
-        if (this._eventIdMap[e.id]) {
+        if (this._eventInfoById.has(e.id)) {
             throw new Error(`Event "${e.id}" is already registered.`);
         }
-        if (!this._events[e.trigger]) {
-            this._events[e.trigger] = [];
+        this._eventInfoById.set(e.id, {
+            event: e,
+            disabled: false
+        });
+        let existingEvents = this._eventsByTrigger.get(e.trigger);
+        if (existingEvents == undefined) {
+            this._eventsByTrigger.set(e.trigger, [e]);
+        } else {
+            existingEvents.push(e);
         }
-        this._events[e.trigger].push(e);
-        this._eventIdMap[e.id] = [e, false];
     }
 
     unregisterEvent(e: GameEvent): void {
-        if (!this._eventIdMap[e.id]) return;
-        this._events[e.trigger].splice(this._events[e.trigger].indexOf(e), 1);
-        delete this._eventIdMap[e.id];
+        if (!this._eventInfoById.has(e.id)) return;
+        this._eventInfoById.delete(e.id);
+        let existingEvents = this._eventsByTrigger.get(e.trigger);
+        if (existingEvents != undefined) {
+            const index = existingEvents.indexOf(e);
+            if (index >= 0) {
+                existingEvents.splice(index, 1);
+                if (existingEvents.length === 0) {
+                    this._eventsByTrigger.delete(e.trigger);
+                }
+                return;
+            }
+        }
+        throw new Error('Invariance broken: event has info entry but not registered under any trigger id.');
+    }
+
+    getEvents(): GameEvent[] {
+        let events: GameEvent[] = [];
+        for (let info of this._eventInfoById.values()) {
+            events.push(info.event);
+        }
+        return events;
     }
 
     /**
@@ -62,14 +91,15 @@ export class GameEventEngine {
      */
     async trigger(t: string): Promise<void> {
         if (t.length === 0) throw new Error('Trigger id cannot be empty.');
-        const events = this._events[t];
-        if (!events) return;
+        const events = this._eventsByTrigger.get(t);
+        if (events == undefined) return;
         let exclusions: { [key: string]: boolean; } = {};
         let gameEnded = false;
         for (let e of events) {
             if (gameEnded) break;
+            let info = this._eventInfoById.get(e.id) as GameEventInfo;
             // Skip disabled events.
-            if (this._eventIdMap[e.id][1]) continue;
+            if (info.disabled) continue;
             // Skip mutually exclusive events.
             if (exclusions[e.id]) continue;
             // Check all the conditions.
@@ -102,7 +132,7 @@ export class GameEventEngine {
             gameEnded = await this.executeActions(e.actions);
             // Once
             if (e.once) {
-                this._eventIdMap[e.id][1] = true;
+                info.disabled = true;
             }
         }
     }

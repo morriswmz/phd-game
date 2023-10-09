@@ -88,6 +88,13 @@ export class GameEngine {
     }
 
     /**
+     * Retrieves the event engine.
+     */
+    get eventEngine(): GameEventEngine {
+        return this._eventEngine;
+    }
+
+    /**
      * Loads game data.
      */
     async loadGameData(): Promise<void> {
