@@ -62,26 +62,36 @@ export interface EffectProvider {
  */
 export class EffectProviderRegistry<T extends EffectProvider> implements SimpleRegistry<T> {
 
-    protected _registry: { [id: string]: T; } = {};
+    protected _registry: Map<string, T> = new Map();
 
     add(item: T): void {
-        if (this._registry[item.id] && this._registry[item.id] !== item) {
+        const existingItem = this._registry.get(item.id);
+        if (existingItem != undefined && existingItem !== item) {
             throw new Error('Cannot register two different items under the same id.');
         }
-        this._registry[item.id] = item;
+        this._registry.set(item.id, item);
     }
 
     has(item: T | string): boolean {
         if (typeof item === 'string') {
-            return this._registry[item] != undefined;
+            return this._registry.has(item);
         } else {
-            return this._registry[item.id] === item;
+            return this._registry.get(item.id) === item;
         }
     }
 
     get(id: string): T {
-        if (!this.has(id)) throw new Error(`Id "${id}" does not exist.`);
-        return this._registry[id];
+        const existingItem = this._registry.get(id);
+        if (existingItem == undefined) {
+            throw new Error(`Id "${id}" does not exist.`);
+        }
+        return existingItem;
+    }
+
+    forEach(callback: (item: T) => void): void {
+        for (let item of this._registry.values()) {
+            callback(item);
+        }
     }
 
 }
