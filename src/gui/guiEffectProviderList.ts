@@ -33,6 +33,8 @@ export abstract class GuiEffectProviderList<T extends EffectProvider> extends Gu
             }
             this._titleContainer.innerHTML =
                 textEngine.localizeAndRender(definition.title);
+            textEngine.getLocalizationDictionary()
+                .addRequiredKey(definition.title);
         }
         this._listContainer = this.createAndAddChild('ul');
         this._collection.onChanged = (collection, e) => {

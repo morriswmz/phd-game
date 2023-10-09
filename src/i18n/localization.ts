@@ -3,19 +3,19 @@ import { load as loadYaml } from "js-yaml";
 
 export class LocalizationDictionary {
     
-    private _dict: Record<string, string> = {};
-    private _requiredTranslationKeys: Record<string, boolean> = {};
+    private _dict: Map<string, string> = new Map();
+    private _requiredTranslationKeys: Set<string> = new Set();
 
     addTranslation(translationKey: string, translation: string): void {
-        this._dict[translationKey] = translation;
+        this._dict.set(translationKey, translation);
     }
 
     addRequiredKey(translationKey: string): void {
-        this._requiredTranslationKeys[translationKey] = true;
+        this._requiredTranslationKeys.add(translationKey);
     }
 
     translate(translationKey: string): string {
-        const translation = this._dict[translationKey]
+        const translation = this._dict.get(translationKey)
         return translation == undefined ? translationKey : translation;
     }
 
@@ -24,8 +24,8 @@ export class LocalizationDictionary {
      */
     dumpMissingTranslationKeys(): string[] {
         let missingKeys: string[] = [];
-        for (const requiredKey in this._requiredTranslationKeys) {
-            if (!(requiredKey in this._dict)) {
+        for (const requiredKey of this._requiredTranslationKeys) {
+            if (!this._dict.has(requiredKey)) {
                 missingKeys.push(requiredKey);
             }
         }
@@ -38,9 +38,24 @@ export class LocalizationDictionary {
      * order.
      */
     dumpRequiredTranslationKeys(): string[] {
-        let requiredKeys = Object.keys(this._requiredTranslationKeys);
+        let requiredKeys = [...this._requiredTranslationKeys];
         requiredKeys.sort();
         return requiredKeys;
+    }
+
+    /**
+     * Dumps all keys with translations but are not required as a list, in
+     * lexicographical order.
+     */
+    dumpUnnecessaryTranslationKeys(): string[] {
+        let unnecessaryKeys: string[] = [];
+        for (const key of this._dict.keys()) {
+            if (!this._requiredTranslationKeys.has(key)) {
+                unnecessaryKeys.push(key);
+            }
+        }
+        unnecessaryKeys.sort();
+        return unnecessaryKeys;
     }
 
     async loadFrom(url: string): Promise<void> {

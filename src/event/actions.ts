@@ -1,8 +1,9 @@
-import { GameState, EndGameState } from '../gameState';
-import { EventAction, EventActionExecutionContext, EventCondition, GuiActionProxy } from './core';
-import { EventExpressionEvaluator, CompiledEventExpression, EventExpressionCompiler } from './expression';
+import { EndGameState } from '../gameState';
+import { EventAction, EventActionExecutionContext, EventCondition } from './core';
+import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
 import { ECExpression, EventConditionFactory } from './conditions';
+import { SetBuilder } from '../utils/collection';
 
 // Note on the usage of typeof.
 // For JSON-like objects, it is safe to check the types of numbers/strings using
@@ -147,6 +148,10 @@ export class EADisplayMessage extends EventAction {
                                                  this._icon);
     }
 
+    collectTranslationKeys(): Set<string> {
+        return new Set([this._message, this._confirm]);
+    }
+
 }
 
 /**
@@ -191,6 +196,12 @@ export class EADisplayRandomMessage extends EventAction {
         await context.actionProxy.displayMessage(this._messages[msgId],
                                                  this._confirm,
                                                  this._icon);
+    }
+
+    collectTranslationKeys(): Set<string> {
+        let keys = new Set(this._messages);
+        keys.add(this._confirm);
+        return keys;
     }
 
 }
@@ -279,6 +290,17 @@ export class EADisplayChoices extends EventAction {
         }
     }
 
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>();
+        builder.add(this._message, this._choiceMessages);
+        for (const actionList of this._actions) {
+            for (const action of actionList) {
+                builder.add(action.collectTranslationKeys());
+            }
+        }
+        return builder.get();
+    }
+
 }
 
 /**
@@ -352,6 +374,16 @@ export class EARandom extends EventAction {
         }
     }
 
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>()
+        for (const actionList of this._actions) {
+            for (const action of actionList) {
+                builder.add(action.collectTranslationKeys());
+            }
+        }
+        return builder.get();
+    }
+
 }
 
 /**
@@ -413,6 +445,17 @@ export class EACoinFlip extends EventAction {
                 await a.execute(context);
             }
         }
+    }
+
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>();
+        for (let action of this._successActions) {
+            builder.add(action.collectTranslationKeys());
+        }
+        for (let action of this._failActions) {
+            builder.add(action.collectTranslationKeys());
+        }
+        return builder.get();
     }
 
 }
@@ -488,6 +531,16 @@ export class EASwitch extends EventAction {
                 break;
             }
         }
+    }
+
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>();
+        for (const actionList of this._actions) {
+            for (const action of actionList) {
+                builder.add(action.collectTranslationKeys());
+            }
+        }
+        return builder.get();
     }
 
 }
@@ -593,6 +646,14 @@ export class EALoop extends EventAction {
                 }
             }
         }
+    }
+
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>();
+        for (let action of this._actions) {
+            builder.add(action.collectTranslationKeys());
+        }
+        return builder.get();
     }
 
 }
@@ -892,6 +953,10 @@ export class EAEndGame extends EventAction {
         context.gameState.endGameState = this._winning
             ? EndGameState.Winning
             : EndGameState.Losing;
+    }
+
+    collectTranslationKeys(): Set<string> {
+        return new Set([this._message, this._confirm]);
     }
 
 }

@@ -26,14 +26,16 @@ export interface GuiFooterDefinition {
 // The footer GUI component, where help, privacy notice, copyright notice, etc.
 // are displayed.
 export class GuiFooter extends GuiBase<HTMLElement> {
-  constructor(container: HTMLElement, textRenderer: GameTextEngine,
+  constructor(container: HTMLElement, textEngine: GameTextEngine,
               modalBox: GuiModalBox, definition?: GuiFooterDefinition) {
-    super(container, textRenderer);
+    super(container, textEngine);
     this.removeAllChildrenOf(container);
     if (!definition) return;
+    const localizer = textEngine.getLocalizationDictionary();
     if (definition.preamble) {
       let preamble = document.createElement('span');
-      preamble.innerHTML = textRenderer.localizeAndRender(definition.preamble);
+      preamble.innerHTML = textEngine.localizeAndRender(definition.preamble);
+      localizer.addRequiredKey(definition.preamble);
       this._container.appendChild(preamble);
     }
     for (let i = 0; i < definition.buttons.length; i++) {
@@ -44,7 +46,8 @@ export class GuiFooter extends GuiBase<HTMLElement> {
         this._container.appendChild(separator);
       }
       let button = document.createElement('a');
-      button.innerHTML = textRenderer.localizeAndRender(buttonDef.text);
+      button.innerHTML = textEngine.localizeAndRender(buttonDef.text);
+      localizer.addRequiredKey(buttonDef.text);
       if ('styleClasses' in buttonDef) {
         if (!Array.isArray(buttonDef.styleClasses)) {
           throw new Error("Style classes should be an array.");
@@ -56,6 +59,9 @@ export class GuiFooter extends GuiBase<HTMLElement> {
       if ('url' in buttonDef) {
         button.href = buttonDef.url;
       } else {
+        localizer.addRequiredKey(buttonDef.messageTitle);
+        localizer.addRequiredKey(buttonDef.message);
+        localizer.addRequiredKey(buttonDef.confirmText);
         button.onclick = (event) => {
           event.preventDefault();
           modalBox.display(

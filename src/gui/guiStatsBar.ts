@@ -61,8 +61,8 @@ class GuiStatsBarItem {
     }
   }
 
-  update(textRenderer: GameTextEngine, ee: EventExpressionEvaluator) {
-    this._container.innerHTML = textRenderer.localizeAndRender(this._text);
+  update(textEngine: GameTextEngine, ee: EventExpressionEvaluator) {
+    this._container.innerHTML = textEngine.localizeAndRender(this._text);
     let conditionMet = false;
     for (const style of this._conditionalStyles) {
       if (!!ee.eval(style.conditionExpression)) {
@@ -84,15 +84,16 @@ export class GuiStatsBar extends GuiBase<HTMLElement> {
   private _itemsByTriggeringVariable: Record<string, GuiStatsBarItem[]> = {};
   private _expressionEvaluator: EventExpressionEvaluator;
 
-  constructor(container: HTMLElement, textRenderer: GameTextEngine,
+  constructor(container: HTMLElement, textEngine: GameTextEngine,
               expressionEngine: EventExpressionEngine,
               definition?: GuiStatsBarDefinition) {
-    super(container, textRenderer);
+    super(container, textEngine);
     this._expressionEvaluator = expressionEngine;
     if (!definition || !definition.items) return;
     const leftContainer = this.createAndAddChild('div', 'stats_left');
     const rightContainer = this.createAndAddChild('div', 'stats_right');
     for (const itemDef of definition.items) {
+      textEngine.getLocalizationDictionary().addRequiredKey(itemDef.text);
       const itemContainer = document.createElement('p');
       const item = new GuiStatsBarItem(itemContainer, expressionEngine,
                                        itemDef);

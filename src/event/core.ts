@@ -2,6 +2,7 @@
  * Core definitions for the event system.
  */
 import { GameState } from '../gameState';
+import { SetBuilder } from '../utils/collection';
 import { EventExpressionEvaluator, CompiledEventExpression } from './expression';
 
 /**
@@ -66,6 +67,11 @@ export abstract class EventAction {
         throw new Error('Not implemented.');
     }
 
+    // Collects all translation keys defined in this event action as a set.
+    collectTranslationKeys(): Set<string> {
+        return new Set();
+    }
+
 }
 
 /**
@@ -125,6 +131,15 @@ export class GameEvent {
      */
     get once(): boolean {
         return this._once;
+    }
+
+    /**
+     * Collects translation keys from all event actions
+     */
+    collectTranslationKeys(): Set<string> {
+        const builder = new SetBuilder<string>();
+        this._actions.forEach((a) => builder.add(a.collectTranslationKeys()));
+        return builder.get();
     }
 }
 
