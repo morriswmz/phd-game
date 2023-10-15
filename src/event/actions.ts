@@ -82,7 +82,7 @@ export class EALog extends EventAction {
     static ID = 'Log';
     
     /**
-     * Creates an `EALog` instance from it JSON definition stored in the given
+     * Creates an `EALog` instance from its JSON definition stored in the given
      * JSON object.
      * @param obj Schema:
      *     ```
@@ -121,7 +121,7 @@ export class EADisplayMessage extends EventAction {
     static ID = 'DisplayMessage';
 
     /**
-     * Creates an `EADisplayMessage` instance from it JSON definition stored in
+     * Creates an `EADisplayMessage` instance from its JSON definition stored in
      * the given JSON object.
      * @param obj Schema:
      *  ```
@@ -166,7 +166,7 @@ export class EADisplayRandomMessage extends EventAction {
     static ID = 'DisplayRandomMessage';
 
     /**
-     * Creates an `EADisplayRandomMessage` instance from it JSON definition
+     * Creates an `EADisplayRandomMessage` instance from its JSON definition
      * stored in the given JSON object.
      * @param obj Schema:
      *  ```
@@ -226,7 +226,7 @@ export class EADisplayChoices extends EventAction {
     static ID = 'DisplayChoices';
     
     /**
-     * Creates an `EADisplayChoices` instance from it JSON definition stored in
+     * Creates an `EADisplayChoices` instance from its JSON definition stored in
      * the given JSON object.
      * @param obj Schema:
      *     ```
@@ -324,7 +324,7 @@ export class EARandom extends EventAction {
     static ID = 'Random';
     
     /**
-     * Creates an `EARandom` instance from it JSON definition stored in the
+     * Creates an `EARandom` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema:
      *     ```
@@ -403,7 +403,7 @@ export class EACoinFlip extends EventAction {
     static ID = 'CoinFlip';
 
     /**
-     * Creates an `EACoinFlip` instance from it JSON definition stored in the
+     * Creates an `EACoinFlip` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema:
      *     ```
@@ -476,7 +476,7 @@ export class EASwitch extends EventAction {
     static ID = 'Switch';
 
     /**
-     * Creates an `EASwitch` instance from it JSON definition stored in the
+     * Creates an `EASwitch` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema:
      *     ```
@@ -561,7 +561,7 @@ export class EALoop extends EventAction {
     static ID = 'Loop';
     
     /**
-     * Creates an `EALoop` instance from it JSON definition stored in the given
+     * Creates an `EALoop` instance from its JSON definition stored in the given
      * JSON object.
      * @param obj Schema:
      *     ```
@@ -670,7 +670,7 @@ export class EAUpdateVariable extends EventAction {
     static ID = 'UpdateVariable';
     
     /**
-     * Creates an `EAUpdateVariable` instance from it JSON definition stored in
+     * Creates an `EAUpdateVariable` instance from its JSON definition stored in
      * the given JSON object.
      * @param obj Schema:
      *     ```
@@ -717,8 +717,8 @@ export class EAUpdateVariables extends EventAction {
     static ID = 'UpdateVariables';
 
     /**
-     * Creates an `EAUpdateVariables` instance from it JSON definition stored in
-     * the given JSON object.
+     * Creates an `EAUpdateVariables` instance from its JSON definition stored
+     * in the given JSON object.
      * @param obj Schema:
      *     ```
      *     {
@@ -763,7 +763,7 @@ export class EAUpdateVariableLimits extends EventAction {
     static ID = 'UpdateVariableLimits';
 
     /**
-     * Creates an `EAUpdateVariableLimits` instance from it JSON definition
+     * Creates an `EAUpdateVariableLimits` instance from its JSON definition
      * stored in the given JSON object.
      * @param obj Schema:
      *     ```
@@ -813,7 +813,7 @@ export class EAGiveItem extends EventAction {
     static ID = 'GiveItem';
 
     /**
-     * Creates an `EAGiveItem` instance from it JSON definition stored in the
+     * Creates an `EAGiveItem` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema:
      *     ```
@@ -863,7 +863,7 @@ export class EAUpdateItemAmounts extends EventAction {
     static ID = 'UpdateItemAmounts';
 
     /**
-     * Creates an `EAUpdateItemAmounts` instance from it JSON definition stored
+     * Creates an `EAUpdateItemAmounts` instance from its JSON definition stored
      * in the given JSON object.
      * @param obj Schema:
      *     ``
@@ -916,7 +916,7 @@ export class EAEndGame extends EventAction {
     static ID = 'EndGame';
 
     /**
-     * Creates an `EAEndGame` instance from it JSON definition stored in the
+     * Creates an `EAEndGame` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema:
      *     ```
@@ -973,7 +973,7 @@ export class EASetStatus extends EventAction {
     static ID = 'SetStatus';
     
     /**
-     * Creates an `EASetStatus` instance from it JSON definition stored in the
+     * Creates an `EASetStatus` instance from its JSON definition stored in the
      * given JSON object.
      * @param obj Schema
      *     ```
@@ -1055,7 +1055,7 @@ export class EATriggerEvents extends EventAction {
     static ID = 'TriggerEvents'
 
     /**
-     * Creates an `EATriggerEvents` instance from it JSON definition stored in
+     * Creates an `EATriggerEvents` instance from its JSON definition stored in
      * the given JSON object.
      * @param obj Schema
      *     ```
