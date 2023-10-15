@@ -5,7 +5,7 @@ import { ItemRegistry, Inventory } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
 import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents, EALoop } from './event/actions';
-import { EventConditionFactory, ECExpression } from './event/conditions';
+import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
 
@@ -146,6 +146,10 @@ export class GameEngine {
         this._actionFactory.registerDeserializer(EATriggerEvents);
         // Condition factory
         this._conditionFactory.registerDeserializer(ECExpression);
+        this._conditionFactory.registerDeserializer(ECNot);
+        this._conditionFactory.registerDeserializer(ECAll);
+        this._conditionFactory.registerDeserializer(ECAny);
+        this._conditionFactory.registerDeserializer(ECSome);
     }
 
     /**
