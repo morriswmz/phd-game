@@ -13,15 +13,14 @@ export class GameEventEngine {
     // id => (GameEvent, disabled)
     private _eventInfoById: Map<string, GameEventInfo> = new Map();
     private _gameState: GameState;
-    private _actionProxy: GuiActionProxy;
     // Event actions and condition have access to the same expression evaluator.
     private _exprEngine: EventExpressionEngine;
     private _executionContext: EventActionExecutionContext;
+    private _ongoingTrigger: string | null = null;
 
     constructor(gameState: GameState, actionProxy: GuiActionProxy,
                 expressionEngine: EventExpressionEngine) {
         this._gameState = gameState;
-        this._actionProxy = actionProxy;
         this._exprEngine = expressionEngine;
         this._executionContext = {
             gameState: gameState,
@@ -30,8 +29,6 @@ export class GameEventEngine {
         };
     }
 
-    public onActionExecuted: ((gs: GameState) => void ) | undefined = undefined;
-    
     enableAll(): void {
         for (let info of this._eventInfoById.values()) {
             info.disabled = false;
@@ -86,10 +83,16 @@ export class GameEventEngine {
     }
 
     /**
-     * Triggers events.
+     * Triggers events with the given trigger id.
+     * Note: Synchronous recursive triggering is not supported, and you can not
+     * call `trigger()` again if the previous `trigger()` call hasn't resolved.
      * @param t Trigger id.
      */
     async trigger(t: string): Promise<void> {
+        if (this._ongoingTrigger != null) {
+            throw new Error(`Cannot trigger when the ongoing trigger "${this._ongoingTrigger}" is still being processed.`);
+        }
+        this._ongoingTrigger = t;
         if (t.length === 0) throw new Error('Trigger id cannot be empty.');
         const events = this._eventsByTrigger.get(t);
         if (events == undefined) return;
@@ -135,12 +138,12 @@ export class GameEventEngine {
                 info.disabled = true;
             }
         }
+        this._ongoingTrigger = null;
     }
 
     async executeActions(actions: EventAction[]): Promise<boolean> {
         for (let a of actions) {
             await a.execute(this._executionContext);
-            if (this.onActionExecuted) this.onActionExecuted(this._gameState);
             if (this._gameState.endGameState !== EndGameState.None) {
                 // Stop processing further actions or events
                 return true;
