@@ -23,6 +23,10 @@ npm run build && npm start
 and then navigate to http://localhost:8000 in your browser. Built bundle will be
 outputted to the `dist` directory.
 
+> [!NOTE] 
+> The rulesets in this repo can be different from the online version hosted on
+> my website.
+
 ## License
 
 MIT
