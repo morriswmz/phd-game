@@ -90,12 +90,12 @@ em {
 }
 #message_window {
     min-height: 240px;
-    text-align: center;
     display: flex;
     flex-direction: column;
 }
 .message_container {
     flex-grow: 1;
+    padding: 0 1em;
 }
 .choices_container a {
     transform: scale(0.5);
