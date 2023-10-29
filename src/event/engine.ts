@@ -24,14 +24,42 @@ export class GameEventEngine {
         this._exprEngine = expressionEngine;
         this._executionContext = {
             gameState: gameState,
-            actionProxy: actionProxy,
-            evaluator: expressionEngine
+            evaluator: expressionEngine,
+            eventEngine: this,
+            actionProxy: actionProxy
         };
     }
 
-    enableAll(): void {
+    /**
+     * Enables the game event of the given `eventId`.
+     * Throws an error if the given `eventId` does not exist.
+     */
+    enableEvent(eventId: string): void {
+        let info = this._eventInfoById.get(eventId);
+        if (info == undefined) {
+            throw new Error(`Event "${eventId}" does not exist.`);
+        }
+        info.disabled = false;
+    }
+
+    /**
+     * Disables the game event of the given `eventId`.
+     * Throws an error if the given `eventId` does not exist.
+     */
+    disableEvent(eventId: string): void {
+        let info = this._eventInfoById.get(eventId);
+        if (info == undefined) {
+            throw new Error(`Event "${eventId}" does not exist.`);
+        }
+        info.disabled = true;
+    }
+
+    /**
+     * Resets each game event's state (e.g., disabled/enabled).
+     */
+    resetEventStates(): void {
         for (let info of this._eventInfoById.values()) {
-            info.disabled = false;
+            info.disabled = info.event.disabledByDefault;
         }
     }
 
@@ -47,7 +75,7 @@ export class GameEventEngine {
         }
         this._eventInfoById.set(e.id, {
             event: e,
-            disabled: false
+            disabled: e.disabledByDefault
         });
         let existingEvents = this._eventsByTrigger.get(e.trigger);
         if (existingEvents == undefined) {

@@ -3,6 +3,7 @@
  */
 import { GameState } from '../gameState';
 import { SetBuilder } from '../utils/collection';
+import { GameEventEngine } from './engine';
 import { EventExpressionEvaluator, CompiledEventExpression } from './expression';
 
 /**
@@ -53,6 +54,7 @@ export abstract class EventCondition {
  * Context needed to execute an `EventAction`.
  */
 export interface EventActionExecutionContext extends EventConditionEvaluationContext {
+    readonly eventEngine: GameEventEngine;
     readonly actionProxy: GuiActionProxy;
 }
 
@@ -86,7 +88,8 @@ export class GameEvent {
                 private _actions: EventAction[] = [],
                 private _probability: number | CompiledEventExpression = 1.0,
                 private _exclusions: string[] = [],
-                private _once: boolean = false)
+                private _once: boolean = false,
+                private _disabledByDefault: boolean = false)
     {
     }
     /**
@@ -131,6 +134,13 @@ export class GameEvent {
      */
     get once(): boolean {
         return this._once;
+    }
+
+    /**
+     * Returns if this event is disable by default.
+     */
+    get disabledByDefault(): boolean {
+        return this._disabledByDefault;
     }
 
     /**

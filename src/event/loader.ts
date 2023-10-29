@@ -41,6 +41,7 @@ export class GameEventLoader {
      *      conditions: EventCondition[] | undefined,
      *      probability: number | string | undefined,
      *      once: boolean | undefined,
+     *      disabled: boolean | undefined,
      *      exclusions: string[] | undefined,
      *      actions: EventAction[]
      *  }
@@ -73,7 +74,9 @@ export class GameEventLoader {
         if (!Array.isArray(obj['actions'])) throw new Error('Missing actions.');
         const actions = obj['actions'].map((item: any) => this._actionFactory.fromJSONObject(item));
         const once = !!obj['once'];
-        return new GameEvent(id, trigger, conditions, actions, probability, exclusions, once);
+        const disabledByDefault = !!obj['disabled'];
+        return new GameEvent(id, trigger, conditions, actions, probability,
+                             exclusions, once, disabledByDefault);
     }
 
 }

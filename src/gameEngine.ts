@@ -4,7 +4,7 @@ import { GuiGameWindow, GuiGame } from './gui/guiGame';
 import { ItemRegistry, Inventory } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
-import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents, EALoop } from './event/actions';
+import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents, EALoop, EAEnableEvents, EADisableEvents } from './event/actions';
 import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -144,6 +144,8 @@ export class GameEngine {
         this._actionFactory.registerDeserializer(EASwitch);
         this._actionFactory.registerDeserializer(EALoop);
         this._actionFactory.registerDeserializer(EATriggerEvents);
+        this._actionFactory.registerDeserializer(EAEnableEvents);
+        this._actionFactory.registerDeserializer(EADisableEvents);
         // Condition factory
         this._conditionFactory.registerDeserializer(ECExpression);
         this._conditionFactory.registerDeserializer(ECNot);
@@ -160,7 +162,7 @@ export class GameEngine {
             await this.loadGameData();
         }
         this._gameState.reset(newRandomSeed);
-        this._eventEngine.enableAll();
+        this._eventEngine.resetEventStates();
         await this._eventEngine.trigger('Initialization');
     }
 

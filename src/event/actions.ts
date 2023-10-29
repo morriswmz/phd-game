@@ -866,7 +866,7 @@ export class EAUpdateItemAmounts extends EventAction {
      * Creates an `EAUpdateItemAmounts` instance from its JSON definition stored
      * in the given JSON object.
      * @param obj Schema:
-     *     ``
+     *     ```
      *     {
      *         "id": "UpdateItemAmounts",
      *         "updates": { [itemId: string]: number | string; }
@@ -1047,7 +1047,6 @@ interface TriggerInfo {
  */
 export class EATriggerEvents extends EventAction {
 
-
     constructor(private _triggerInfoList: TriggerInfo[]) {
         super();
     }
@@ -1117,6 +1116,97 @@ export class EATriggerEvents extends EventAction {
                 : context.evaluator.eval(trigger.probability);
             context.gameState.pushPendingTrigger(trigger.id, probability,
                                                  trigger.priority);
+        }
+    }
+
+}
+
+/**
+ * Enables one or more events. This action can re-enable game events with `once`
+ * set to true.
+ */
+export class EAEnableEvents extends EventAction {
+
+    constructor(private _eventIds: string[]) {
+        super();
+    }
+
+    static ID = 'EnableEvents';
+
+    /**
+     * Creates an `EAEnableEvents` instance from its JSON definition stored in
+     * the given JSON object.
+     * @param obj Schema
+     *     ```
+     *     {
+     *         "id": "EnableEvents",
+     *         "eventIds": string[]
+     *     }
+     *     ```
+     * @param context Not used.
+     */
+    static fromJSONObject(obj: any, context: EventActionDeserializationContext): EAEnableEvents {
+        if (!('eventIds' in obj) || !Array.isArray(obj.eventIds)) {
+            throw new Error('Expecting "eventIds" to be an array.');
+        }
+        let eventIds: string[] = [];
+        for (let eventId of obj.eventIds) {
+            if (typeof eventId !== 'string') {
+                throw new Error('Expect event id to be a string.');
+            }
+            eventIds.push(eventId);
+        }
+        return new EAEnableEvents(eventIds);
+    }
+
+    async execute(context: EventActionExecutionContext): Promise<void> {
+        for (const eventId of this._eventIds) {
+            context.eventEngine.enableEvent(eventId);
+        }
+    }
+
+}
+
+/**
+ * Disables one or more events.
+ */
+export class EADisableEvents extends EventAction {
+
+    constructor(private _eventIds: string[]) {
+        super();
+    }
+
+    static ID = 'DisableEvents';
+
+    /**
+     * Creates an `EADisableEvents` instance from its JSON definition stored in
+     * the given JSON object.
+     * @param obj Schema
+     *     ```
+     *     {
+     *         "id": "DisableEvents",
+     *         "eventIds": string[]
+     *     }
+     *     ```
+     * @param context Not used.
+     */
+    static fromJSONObject(obj: any, context: EventActionDeserializationContext): EADisableEvents {
+        if (!('eventIds' in obj) || !Array.isArray(obj.eventIds)) {
+            throw new Error('Expecting "eventIds" to be an array.');
+        }
+        let eventIds: string[] = [];
+        for (let eventId of obj.eventIds) {
+            if (typeof eventId !== 'string') {
+                throw new Error('Expect event id to be a string.');
+            }
+            eventIds.push(eventId);
+        }
+        return new EADisableEvents(eventIds);
+    }
+
+    async execute(context: EventActionExecutionContext): Promise<void> {
+        for (const eventId of this._eventIds) {
+            context.eventEngine.disableEvent(eventId);
         }
     }
 
