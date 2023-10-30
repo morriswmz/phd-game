@@ -152,4 +152,3 @@ export class GameEvent {
         return builder.get();
     }
 }
-

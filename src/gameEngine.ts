@@ -1,13 +1,13 @@
-import { GuiActionProxy } from './event/core';
+import { EventActionExecutionContext, GuiActionProxy } from './event/core';
 import { GameState, EndGameState } from './gameState';
-import { GuiGameWindow, GuiGame } from './gui/guiGame';
-import { ItemRegistry, Inventory } from './effect/item';
+import { GuiGame } from './gui/guiGame';
+import { ItemRegistry } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
 import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents, EALoop, EAEnableEvents, EADisableEvents } from './event/actions';
 import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from './event/conditions';
 import { GameEventLoader } from './event/loader';
-import { StatusTable, StatusRegistry } from './effect/status';
+import { StatusRegistry } from './effect/status';
 
 export interface GameConfig {
     initialRandomSeed?: string;
@@ -30,6 +30,7 @@ export class GameEngine {
     private _eventEngine: GameEventEngine;
     private _actionFactory: EventActionFactory;
     private _conditionFactory: EventConditionFactory;
+    private _executionContext: EventActionExecutionContext;
 
     private _dataLoaded: boolean = false;
 
@@ -43,13 +44,17 @@ export class GameEngine {
                                         this._statusRegistry,
                                         this._config.initialRandomSeed);
         this._expressionEngine = new EventExpressionEngine(this._gameState);
-        this._eventEngine = new GameEventEngine(this._gameState,
-                                                this._actionProxy,
-                                                this._expressionEngine);
+        this._eventEngine = new GameEventEngine();
         this._conditionFactory = 
             new EventConditionFactory(this._expressionEngine);
         this._actionFactory = new EventActionFactory(this._conditionFactory,
                                                      this._expressionEngine);
+        this._executionContext = {
+            gameState: this._gameState,
+            evaluator: this._expressionEngine,
+            eventEngine: this._eventEngine,
+            actionProxy: ap
+        };
     }
 
     /**
@@ -164,7 +169,7 @@ export class GameEngine {
         this._gameState.reset(newRandomSeed);
         this._eventEngine.reset();
         this._eventEngine.trigger('Initialization', 1.0, 0);
-        while (await this._eventEngine.processNextTrigger());
+        while (await this._eventEngine.processNextTrigger(this._executionContext));
     }
 
     /**
@@ -178,7 +183,7 @@ export class GameEngine {
             return;
         }
         this._eventEngine.trigger('Tick', 1.0, 0);
-        while (await this._eventEngine.processNextTrigger());
+        while (await this._eventEngine.processNextTrigger(this._executionContext));
         this._gameState.playerStatus.tick();
     }
     

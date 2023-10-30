@@ -1,6 +1,5 @@
-import { GameEvent, GuiActionProxy, EventAction, EventActionExecutionContext } from './core';
-import { GameState, EndGameState } from '../gameState';
-import { EventExpressionEngine } from './expression';
+import { GameEvent, EventAction, EventActionExecutionContext } from './core';
+import { EndGameState } from '../gameState';
 import { PriorityQueue } from '../utils/priorityQueue';
 
 interface GameEventInfo {
@@ -26,26 +25,13 @@ export class GameEventEngine {
     private _eventsByTrigger: Map<string, GameEvent[]> = new Map();
     // id => (GameEvent, disabled)
     private _eventInfoById: Map<string, GameEventInfo> = new Map();
-    private _pendingTriggers: PriorityQueue<PendingTrigger>;
+    private _pendingTriggers: PriorityQueue<PendingTrigger> =
+        new PriorityQueue(comparePendingTrigger);
     private _pendingTriggerOrder: number = 0;
-    private _gameState: GameState;
     // Event actions and condition have access to the same expression evaluator.
-    private _exprEngine: EventExpressionEngine;
-    private _executionContext: EventActionExecutionContext;
     private _ongoingTrigger: string | null = null;
 
-    constructor(gameState: GameState, actionProxy: GuiActionProxy,
-                expressionEngine: EventExpressionEngine) {
-        this._pendingTriggers = new PriorityQueue(comparePendingTrigger);
-        this._gameState = gameState;
-        this._exprEngine = expressionEngine;
-        this._executionContext = {
-            gameState: gameState,
-            evaluator: expressionEngine,
-            eventEngine: this,
-            actionProxy: actionProxy
-        };
-    }
+    constructor() {}
 
     /**
      * Enables the game event of the given `eventId`.
@@ -139,20 +125,20 @@ export class GameEventEngine {
     }
 
     /**
-     * Processes the next trigger in the queue.
+     * Processes the next trigger in the queue using the given `context`.
      * 
      * NOTE: Recursive `processNextTrigger()` calls are not supported.
      * 
      * Returns `true` if there are still pending triggers in the queue.
      * Otherwise returns `false`.
      */
-    async processNextTrigger(): Promise<boolean> {
+    async processNextTrigger(context: EventActionExecutionContext): Promise<boolean> {
         // Check if we need to process the next trigger first
         if (this._pendingTriggers.empty()) return false;
         const pendingTrigger = this._pendingTriggers.pop();
         if (pendingTrigger.probability <= 0 || (
             pendingTrigger.probability < 1 &&
-            this._gameState.nextRandomNumber() > pendingTrigger.probability)) {
+            context.gameState.nextRandomNumber() > pendingTrigger.probability)) {
             return !this._pendingTriggers.empty();
         }
         // Actual processing
@@ -175,7 +161,7 @@ export class GameEventEngine {
             // Check all the conditions.
             let skip = false;
             for (let c of e.conditions) {
-                if (!c.check(this._executionContext)) {
+                if (!c.check(context)) {
                     skip = true;
                     break;
                 }
@@ -184,8 +170,8 @@ export class GameEventEngine {
             // Randomness
             const p = typeof e.probability === 'number'
                 ? e.probability
-                : this._exprEngine.eval(e.probability);
-            if (p <= 0 || (p < 1 && this._gameState.nextRandomNumber() > p)) {
+                : context.evaluator.eval(e.probability);
+            if (p <= 0 || (p < 1 && context.gameState.nextRandomNumber() > p)) {
                 continue;
             }
             // Add exclusions
@@ -193,13 +179,13 @@ export class GameEventEngine {
                 exclusions[ex] = true;
             }
             // Mark as occurred
-            if (this._gameState.occurredEvents[e.id] == undefined)
+            if (context.gameState.occurredEvents[e.id] == undefined)
             {
-                this._gameState.occurredEvents[e.id] = 0;
+                context.gameState.occurredEvents[e.id] = 0;
             }
-            ++this._gameState.occurredEvents[e.id];
+            ++context.gameState.occurredEvents[e.id];
             // Execute actions
-            gameEnded = await this.executeActions(e.actions);
+            gameEnded = await this.executeActions(e.actions, context);
             // Once
             if (e.once) {
                 info.disabled = true;
@@ -209,10 +195,11 @@ export class GameEventEngine {
         return !this._pendingTriggers.empty();
     }
 
-    async executeActions(actions: EventAction[]): Promise<boolean> {
+    async executeActions(actions: EventAction[],
+                         context: EventActionExecutionContext): Promise<boolean> {
         for (let a of actions) {
-            await a.execute(this._executionContext);
-            if (this._gameState.endGameState !== EndGameState.None) {
+            await a.execute(context);
+            if (context.gameState.endGameState !== EndGameState.None) {
                 // Stop processing further actions or events
                 return true;
             }
