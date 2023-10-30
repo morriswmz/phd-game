@@ -30,8 +30,6 @@ type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) =>
 
 export class GameState {
 
-    private _occurredEvents: Record<string, number> = {};
-
     private _playerInventory: Inventory;
     private _playerStatus: StatusTable;
     private _variables: Record<string, number> = {};
@@ -64,10 +62,6 @@ export class GameState {
 
     get playerStatus(): StatusTable {
         return this._playerStatus;
-    }
-
-    get occurredEvents(): { [key: string]: number; } {
-        return this._occurredEvents;
     }
 
     get randomSeed(): string {
@@ -165,7 +159,6 @@ export class GameState {
     reset(newRandomSeed: boolean): void {
         this.playerInventory.clear();
         this.playerStatus.clear();
-        this._occurredEvents = {};
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
@@ -193,8 +186,6 @@ export class GameState {
         for (const statusId in this._playerStatus.items) {
             lines.push(statusId);
         }
-        lines.push('[Occurred Events]');
-        lines.push(Object.keys(this._occurredEvents).join(', '));
         lines.push('[Seed]');
         lines.push(this._randomSeed);
         console.log(lines.join('\n'));

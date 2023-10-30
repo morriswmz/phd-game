@@ -1,5 +1,6 @@
 import { FunctionTable, ExpressionEvaluator, CompiledExpression, FunctionTableProvider, ExpressionCompiler, compileExpression } from '../utils/expression';
 import { GameState } from '../gameState';
+import { EventOccurrenceTracker } from './core';
 
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
@@ -54,10 +55,12 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
 
     private _fTable: EventExpressionFunctionTable;
     private _gameState: GameState;
+    private _eventOccurrenceTracker: EventOccurrenceTracker;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(gs: GameState) {
+    constructor(gs: GameState, tracker: EventOccurrenceTracker) {
         this._gameState = gs;
+        this._eventOccurrenceTracker = tracker;
         this._fTable = this._initFunctionTable();
     }
 
@@ -65,7 +68,7 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
         return {
             getVar: varName => this._gameState.getVar(varName, true),
             setVarLimits: (varName: string, lb: number, ub: number) => this._gameState.setVarLimits(varName, lb, ub),
-            eventOccurred: id => this._gameState.occurredEvents[id] != undefined,
+            eventOccurred: id => this._eventOccurrenceTracker.getEventOccurrenceCount(id) > 0,
             upperBound: varName => this._gameState.getVarLimits(varName)[1],
             lowerBound: varName => this._gameState.getVarLimits(varName)[0],
             itemCount: id => this._gameState.playerInventory.count(id),

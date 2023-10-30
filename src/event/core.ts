@@ -152,3 +152,10 @@ export class GameEvent {
         return builder.get();
     }
 }
+
+export interface EventOccurrenceTracker {
+    /**
+     * Returns the occurrence count of an event with the given `eventId`.
+     */
+    getEventOccurrenceCount(eventId: string): number;
+}

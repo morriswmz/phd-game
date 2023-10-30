@@ -1,10 +1,11 @@
-import { GameEvent, EventAction, EventActionExecutionContext } from './core';
+import { GameEvent, EventAction, EventActionExecutionContext, EventOccurrenceTracker } from './core';
 import { EndGameState } from '../gameState';
 import { PriorityQueue } from '../utils/priorityQueue';
 
 interface GameEventInfo {
     event: GameEvent;
     disabled: boolean;
+    occurrenceCount: number;
 }
 
 interface PendingTrigger {
@@ -20,7 +21,7 @@ function comparePendingTrigger(a: PendingTrigger, b: PendingTrigger): boolean {
     return a.id < b.id;
 }
 
-export class GameEventEngine {
+export class GameEventEngine implements EventOccurrenceTracker {
 
     private _eventsByTrigger: Map<string, GameEvent[]> = new Map();
     // id => (GameEvent, disabled)
@@ -69,7 +70,8 @@ export class GameEventEngine {
         }
         this._eventInfoById.set(e.id, {
             event: e,
-            disabled: e.disabledByDefault
+            disabled: e.disabledByDefault,
+            occurrenceCount: 0
         });
         let existingEvents = this._eventsByTrigger.get(e.trigger);
         if (existingEvents == undefined) {
@@ -102,6 +104,11 @@ export class GameEventEngine {
             events.push(info.event);
         }
         return events;
+    }
+
+    getEventOccurrenceCount(eventId: string): number {
+        const info = this._eventInfoById.get(eventId);
+        return info == undefined ? 0 : info.occurrenceCount;
     }
 
     /**
@@ -153,7 +160,7 @@ export class GameEventEngine {
         let gameEnded = false;
         for (let e of events) {
             if (gameEnded) break;
-            let info = this._eventInfoById.get(e.id) as GameEventInfo;
+            const info = this._eventInfoById.get(e.id) as GameEventInfo;
             // Skip disabled events.
             if (info.disabled) continue;
             // Skip mutually exclusive events.
@@ -179,11 +186,7 @@ export class GameEventEngine {
                 exclusions[ex] = true;
             }
             // Mark as occurred
-            if (context.gameState.occurredEvents[e.id] == undefined)
-            {
-                context.gameState.occurredEvents[e.id] = 0;
-            }
-            ++context.gameState.occurredEvents[e.id];
+            ++info.occurrenceCount;
             // Execute actions
             gameEnded = await this.executeActions(e.actions, context);
             // Once
@@ -217,6 +220,7 @@ export class GameEventEngine {
         }
         for (let info of this._eventInfoById.values()) {
             info.disabled = info.event.disabledByDefault;
+            info.occurrenceCount = 0;
         }
         this._pendingTriggers.clear();
         this._pendingTriggerOrder = 0;
