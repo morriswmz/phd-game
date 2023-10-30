@@ -3,6 +3,7 @@
  */
 import { GameState } from '../gameState';
 import { SetBuilder } from '../utils/collection';
+import { RandomSource } from '../utils/random';
 import { GameEventEngine } from './engine';
 import { EventExpressionEvaluator, CompiledEventExpression } from './expression';
 
@@ -34,6 +35,7 @@ export interface GuiActionProxy {
  */
 export interface EventConditionEvaluationContext {
     readonly gameState: GameState;
+    readonly random: RandomSource;
     readonly evaluator: EventExpressionEvaluator;
 }
 

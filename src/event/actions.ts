@@ -191,8 +191,7 @@ export class EADisplayRandomMessage extends EventAction {
     }
 
     async execute(context: EventActionExecutionContext): Promise<void> {
-        const msgId = Math.floor(
-            context.gameState.nextRandomNumber() * this._messages.length);
+        const msgId = Math.floor(context.random.next() * this._messages.length);
         await context.actionProxy.displayMessage(this._messages[msgId],
                                                  this._confirm,
                                                  this._icon);
@@ -368,7 +367,7 @@ export class EARandom extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         let idx = weightedSample(
             this._weightExprs.map(item => context.evaluator.eval(item)),
-            () => context.gameState.nextRandomNumber());
+            () => context.random.next());
         for (let a of this._actions[idx]) {
             await a.execute(context);
         }
@@ -435,7 +434,7 @@ export class EACoinFlip extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         let p = context.evaluator.eval(this._p);
         if (p < 0) p = 0;
-        let coinFlip = context.gameState.nextRandomNumber();
+        let coinFlip = context.random.next();
         if (coinFlip < p) {
             for (let a of this._successActions) {
                 await a.execute(context);

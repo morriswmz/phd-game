@@ -1,4 +1,3 @@
-import * as seedrandom from 'seedrandom';
 
 import { Inventory, ItemRegistry } from './effect/item';
 import { StatusTable, StatusRegistry } from './effect/status';
@@ -34,26 +33,15 @@ export class GameState {
     private _playerStatus: StatusTable;
     private _variables: Record<string, number> = {};
     private _varLimits: Record<string, [number, number]> = {};
-    private _randomSeed: string;
-    private _random: seedrandom.StatefulPRNG<seedrandom.State.Alea>;
 
     // Public variables
     endGameState: EndGameState = EndGameState.None;
     // event handlers
     onVariableChanged: VariableChangeHandler | undefined;
 
-    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry,
-                randomSeed?: string) {
+    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry) {
         this._playerInventory = new Inventory(itemRegistry);
         this._playerStatus = new StatusTable(statusRegistry);
-        if (randomSeed) {
-            this._randomSeed = randomSeed;
-        } else {
-            this._randomSeed = Math.random().toString().substring(2);
-        }
-        this._random = seedrandom.alea(this._randomSeed, {
-            state: true
-        });
     }
 
     get playerInventory(): Inventory {
@@ -62,14 +50,6 @@ export class GameState {
 
     get playerStatus(): StatusTable {
         return this._playerStatus;
-    }
-
-    get randomSeed(): string {
-        return this._randomSeed;
-    }
-
-    nextRandomNumber(): number {
-        return this._random();
     }
 
     /**
@@ -152,22 +132,13 @@ export class GameState {
 
     /**
      * Resets all internal states for a new game.
-     * @param newRandomSeed If true will generate a new random seed and use the
-     * new seed to reset the random number generator. Otherwise the existing
-     * random seed will be used to reset the random number generator.
      */
-    reset(newRandomSeed: boolean): void {
+    reset(): void {
         this.playerInventory.clear();
         this.playerStatus.clear();
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
-        if (newRandomSeed) {
-            this._randomSeed = Math.random().toString().substring(2);
-        }
-        this._random = seedrandom.alea(this._randomSeed, {
-            state: true
-        });
     }
 
     dumpToConsole(): void {
@@ -186,8 +157,6 @@ export class GameState {
         for (const statusId in this._playerStatus.items) {
             lines.push(statusId);
         }
-        lines.push('[Seed]');
-        lines.push(this._randomSeed);
         console.log(lines.join('\n'));
     }
 

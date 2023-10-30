@@ -145,7 +145,7 @@ export class GameEventEngine implements EventOccurrenceTracker {
         const pendingTrigger = this._pendingTriggers.pop();
         if (pendingTrigger.probability <= 0 || (
             pendingTrigger.probability < 1 &&
-            context.gameState.nextRandomNumber() > pendingTrigger.probability)) {
+            context.random.next() > pendingTrigger.probability)) {
             return !this._pendingTriggers.empty();
         }
         // Actual processing
@@ -178,7 +178,7 @@ export class GameEventEngine implements EventOccurrenceTracker {
             const p = typeof e.probability === 'number'
                 ? e.probability
                 : context.evaluator.eval(e.probability);
-            if (p <= 0 || (p < 1 && context.gameState.nextRandomNumber() > p)) {
+            if (p <= 0 || (p < 1 && context.random.next() > p)) {
                 continue;
             }
             // Add exclusions

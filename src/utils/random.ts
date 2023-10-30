@@ -1,3 +1,5 @@
+import * as seedrandom from 'seedrandom';
+
 /**
  * Samples a integer from [0, w.length) according to the weights defined by w.
  * @param w Array of weights.
@@ -24,4 +26,54 @@ export function weightedSample(w: ArrayLike<number>,
         }
     }
     return idx;
+}
+
+export interface RandomSource {
+    /**
+     * Gets the current random seed.
+     */
+    seed: string;
+    /**
+     * Returns the next random number in [0, 1).
+     */
+    next(): number;
+}
+
+export class AleaRandomSource implements RandomSource {
+
+    private _seed: string;
+    private _random: seedrandom.StatefulPRNG<seedrandom.State.Alea>;
+
+    constructor(seed: string) {
+        this._seed = seed;
+        this._random = seedrandom.alea(seed, {
+            state: true
+        });
+    }
+
+    get seed(): string {
+        return this._seed;
+    }
+
+    next(): number {
+        return this._random.double();
+    }
+
+    /**
+     * Resets the random source.
+     * 
+     * @param seed If set, will reset the random source using the specified
+     * seed. Otherwise, the existing seed will be used.
+     */
+    reset(seed?: string): void {
+        if (seed == undefined) {
+            seed = this._seed;
+        } else {
+            this._seed = seed;
+        }
+        this._random = seedrandom.alea(seed, {
+            state: true
+        });
+    }
+
 }

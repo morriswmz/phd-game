@@ -8,12 +8,17 @@ import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EA
 import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from './event/conditions';
 import { GameEventLoader } from './event/loader';
 import { StatusRegistry } from './effect/status';
+import { AleaRandomSource, RandomSource } from './utils/random';
 
 export interface GameConfig {
     initialRandomSeed?: string;
     itemDefinitionUrl?: string;
     statusDefinitionUrl?: string;
     eventDefinitionUrl?: string;
+}
+
+function newSeedFromNativeRandom(): string {
+    return Math.random().toString().substring(2);
 }
 
 /**
@@ -26,6 +31,7 @@ export class GameEngine {
     private _statusRegistry: StatusRegistry;
     private _actionProxy: GuiActionProxy;
     private _gameState: GameState;
+    private _random: AleaRandomSource;
     private _expressionEngine: EventExpressionEngine;
     private _eventEngine: GameEventEngine;
     private _actionFactory: EventActionFactory;
@@ -41,10 +47,15 @@ export class GameEngine {
         this._itemRegistry = new ItemRegistry();
         this._statusRegistry = new StatusRegistry();
         this._gameState = new GameState(this._itemRegistry,
-                                        this._statusRegistry,
-                                        this._config.initialRandomSeed);
+                                        this._statusRegistry);
+        this._random = new AleaRandomSource(
+            this._config.initialRandomSeed == undefined
+                ? newSeedFromNativeRandom()
+                : this._config.initialRandomSeed
+        );
         this._eventEngine = new GameEventEngine();
         this._expressionEngine = new EventExpressionEngine(this._gameState,
+                                                           this._random,
                                                            this._eventEngine);
         this._conditionFactory = 
             new EventConditionFactory(this._expressionEngine);
@@ -52,6 +63,7 @@ export class GameEngine {
                                                      this._expressionEngine);
         this._executionContext = {
             gameState: this._gameState,
+            random: this._random,
             evaluator: this._expressionEngine,
             eventEngine: this._eventEngine,
             actionProxy: ap
@@ -63,6 +75,13 @@ export class GameEngine {
      */
     get gameState(): GameState {
         return this._gameState;
+    }
+
+    /**
+     * Retrieves the random source.
+     */
+    get random(): RandomSource {
+        return this._random;
     }
 
     /**
@@ -162,12 +181,21 @@ export class GameEngine {
 
     /**
      * Starts (or restarts) the game.
+     * 
+     * @param newRandomSeed If true will generate a new random seed and use the
+     * new seed to reset the random number generator. Otherwise the existing
+     * random seed will be used to reset the random number generator.
      */
     async start(newRandomSeed: boolean): Promise<void> {
         if (!this._dataLoaded) {
             await this.loadGameData();
         }
-        this._gameState.reset(newRandomSeed);
+        this._gameState.reset();
+        if (newRandomSeed) {
+            this._random.reset(newSeedFromNativeRandom());
+        } else {
+            this._random.reset();
+        }
         this._eventEngine.reset();
         this._eventEngine.trigger('Initialization', 1.0, 0);
         while (await this._eventEngine.processNextTrigger(this._executionContext));

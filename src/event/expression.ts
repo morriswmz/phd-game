@@ -1,6 +1,7 @@
 import { FunctionTable, ExpressionEvaluator, CompiledExpression, FunctionTableProvider, ExpressionCompiler, compileExpression } from '../utils/expression';
 import { GameState } from '../gameState';
 import { EventOccurrenceTracker } from './core';
+import { RandomSource } from '../utils/random';
 
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
@@ -55,11 +56,14 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
 
     private _fTable: EventExpressionFunctionTable;
     private _gameState: GameState;
+    private _random: RandomSource
     private _eventOccurrenceTracker: EventOccurrenceTracker;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(gs: GameState, tracker: EventOccurrenceTracker) {
+    constructor(gs: GameState, random: RandomSource,
+                tracker: EventOccurrenceTracker) {
         this._gameState = gs;
+        this._random = random;
         this._eventOccurrenceTracker = tracker;
         this._fTable = this._initFunctionTable();
     }
@@ -79,8 +83,8 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
                 return (base + eItem[0] + eStatus[0]) * eItem[1] * eStatus[1];
             },
             hasStatus: id => this._gameState.playerStatus.count(id) > 0,
-            random: () => this._gameState.nextRandomNumber(),
-            randi: x => Math.floor(this._gameState.nextRandomNumber()),
+            random: () => this._random.next(),
+            randi: x => Math.floor(this._random.next() * x),
             max: Math.max,
             min: Math.min,
             floor: Math.floor,

@@ -1,6 +1,7 @@
 import { LocalizationDictionary } from '../i18n/localization';
 import { GameState } from '../gameState';
 import { isVariableName } from '../utils/expression';
+import { RandomSource } from '../utils/random';
 
 export interface GameTextEngine {
     /**
@@ -42,7 +43,8 @@ export interface GameTextEngine {
 
 export class SimpleGameTextEngine implements GameTextEngine {
     
-    constructor(private _ldict: LocalizationDictionary, private _gs: GameState) {
+    constructor(private _ldict: LocalizationDictionary, private _gs: GameState,
+                private _random: RandomSource) {
 
     }
 
@@ -92,11 +94,11 @@ export class SimpleGameTextEngine implements GameTextEngine {
         }
         switch (varName) {
             case 'seed':
-                return this._gs.randomSeed;
+                return this._random.seed;
             case 'seedUrl':
                 let path = window.location.protocol + '//' + 
                            window.location.host + window.location.pathname;
-                let encodedSeed = encodeURIComponent(this._gs.randomSeed)
+                let encodedSeed = encodeURIComponent(this._random.seed)
                 return `${path}#init_seed=${encodedSeed}`;
             default:
                 return undefined;
