@@ -1,9 +1,7 @@
 import * as seedrandom from 'seedrandom';
 
-import { JSONSerializable } from './utils/jsonSerializable';
 import { Inventory, ItemRegistry } from './effect/item';
 import { StatusTable, StatusRegistry } from './effect/status';
-import { PriorityQueue } from './utils/priorityQueue';
 
 export enum EndGameState {
     None,
@@ -30,24 +28,10 @@ export class VariableChangedEvent {
 
 type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) => void;
 
-interface PendingTrigger {
-    id: string;
-    priority: number;
-    order: number;
-    probability: number;
-}
-
-function comparePendingTrigger(a: PendingTrigger, b: PendingTrigger): boolean {
-    if (a.priority !== b.priority) return a.priority < b.priority;
-    if (a.order !== b.order) return a.order > b.order;
-    return a.id < b.id;
-}
-
 export class GameState {
 
     private _occurredEvents: Record<string, number> = {};
-    private _pendingTriggers: PriorityQueue<PendingTrigger>;
-    private _pendingTriggerOrder: number = 0;
+
     private _playerInventory: Inventory;
     private _playerStatus: StatusTable;
     private _variables: Record<string, number> = {};
@@ -62,7 +46,6 @@ export class GameState {
 
     constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry,
                 randomSeed?: string) {
-        this._pendingTriggers = new PriorityQueue(comparePendingTrigger);
         this._playerInventory = new Inventory(itemRegistry);
         this._playerStatus = new StatusTable(statusRegistry);
         if (randomSeed) {
@@ -174,38 +157,6 @@ export class GameState {
     }
 
     /**
-     * Pushes a new pending trigger to the queue.
-     * @param triggerId Trigger id.
-     * @param probability Probability of triggering.
-     * @param priority Priority.
-     */
-    pushPendingTrigger(triggerId: string, probability: number,
-                       priority: number): void {
-        this._pendingTriggers.push({
-            'id': triggerId,
-            'priority': priority,
-            'order': this._pendingTriggerOrder++,
-            'probability': probability
-        });
-    }
-
-    /**
-     * Pops one pending trigger from the queue.
-     * @returns A pair of (trigger id, probability).
-     */
-    popPendingTrigger(): [string, number] {
-        const pendingTrigger = this._pendingTriggers.pop();
-        return [pendingTrigger.id, pendingTrigger.probability];
-    }
-
-    /**
-     * Checks if there exists any pending trigger.
-     */
-    hasPendingTrigger(): boolean {
-        return !this._pendingTriggers.empty();
-    }
-
-    /**
      * Resets all internal states for a new game.
      * @param newRandomSeed If true will generate a new random seed and use the
      * new seed to reset the random number generator. Otherwise the existing
@@ -215,8 +166,6 @@ export class GameState {
         this.playerInventory.clear();
         this.playerStatus.clear();
         this._occurredEvents = {};
-        this._pendingTriggers.clear();
-        this._pendingTriggerOrder = 0;
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
@@ -246,14 +195,6 @@ export class GameState {
         }
         lines.push('[Occurred Events]');
         lines.push(Object.keys(this._occurredEvents).join(', '));
-        lines.push('[Pending Triggers]');
-        if (this.hasPendingTrigger()) {
-            const top = this._pendingTriggers.top();
-            const pendingCount = this._pendingTriggers.length;
-            lines.push(`"${top.id}" and ${pendingCount - 1} more.`);
-        } else {
-            lines.push('None');
-        }
         lines.push('[Seed]');
         lines.push(this._randomSeed);
         console.log(lines.join('\n'));

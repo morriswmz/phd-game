@@ -162,8 +162,9 @@ export class GameEngine {
             await this.loadGameData();
         }
         this._gameState.reset(newRandomSeed);
-        this._eventEngine.resetEventStates();
-        await this._eventEngine.trigger('Initialization');
+        this._eventEngine.reset();
+        this._eventEngine.trigger('Initialization', 1.0, 0);
+        while (await this._eventEngine.processNextTrigger());
     }
 
     /**
@@ -176,17 +177,9 @@ export class GameEngine {
             await this.start(endGameState === EndGameState.Winning);
             return;
         }
+        this._eventEngine.trigger('Tick', 1.0, 0);
+        while (await this._eventEngine.processNextTrigger());
         this._gameState.playerStatus.tick();
-        await this._eventEngine.trigger('Tick');
-        while (this._gameState.hasPendingTrigger()) {
-            const [id, probability] = this._gameState.popPendingTrigger();
-            if (probability <= 0) continue;
-            if (probability < 1 &&
-                this._gameState.nextRandomNumber() > probability) {
-                continue;
-            }
-            await this._eventEngine.trigger(id);
-        }
     }
     
 }

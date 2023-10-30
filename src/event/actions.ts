@@ -1114,8 +1114,8 @@ export class EATriggerEvents extends EventAction {
             const probability = trigger.probability == undefined
                 ? 1.0
                 : context.evaluator.eval(trigger.probability);
-            context.gameState.pushPendingTrigger(trigger.id, probability,
-                                                 trigger.priority);
+            context.eventEngine.trigger(trigger.id, probability,
+                                        trigger.priority);
         }
     }
 
