@@ -60,6 +60,8 @@ export interface EventActionExecutionContext extends EventConditionEvaluationCon
     readonly actionProxy: GuiActionProxy;
 }
 
+const EMPTY_TRANSLATION_KEYS: ReadonlySet<string> = new Set();
+
 /**
  * Represents an action.
  * The implementation should be stateless and only storing necessary
@@ -72,8 +74,8 @@ export abstract class EventAction {
     }
 
     // Collects all translation keys defined in this event action as a set.
-    collectTranslationKeys(): Set<string> {
-        return new Set();
+    collectTranslationKeys(): ReadonlySet<string> {
+        return EMPTY_TRANSLATION_KEYS;
     }
 
 }
@@ -148,9 +150,11 @@ export class GameEvent {
     /**
      * Collects translation keys from all event actions
      */
-    collectTranslationKeys(): Set<string> {
+    collectTranslationKeys(): ReadonlySet<string> {
         const builder = new SetBuilder<string>();
-        this._actions.forEach((a) => builder.add(a.collectTranslationKeys()));
+        this._actions.forEach((a) => {
+            builder.addAll(a.collectTranslationKeys());
+        });
         return builder.get();
     }
 }

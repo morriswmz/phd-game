@@ -291,10 +291,11 @@ export class EADisplayChoices extends EventAction {
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
-        builder.add(this._message, this._choiceMessages);
+        builder.add(this._message);
+        builder.addAll(this._choiceMessages);
         for (const actionList of this._actions) {
             for (const action of actionList) {
-                builder.add(action.collectTranslationKeys());
+                builder.addAll(action.collectTranslationKeys());
             }
         }
         return builder.get();
@@ -377,7 +378,7 @@ export class EARandom extends EventAction {
         const builder = new SetBuilder<string>()
         for (const actionList of this._actions) {
             for (const action of actionList) {
-                builder.add(action.collectTranslationKeys());
+                builder.addAll(action.collectTranslationKeys());
             }
         }
         return builder.get();
@@ -449,10 +450,10 @@ export class EACoinFlip extends EventAction {
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
         for (let action of this._successActions) {
-            builder.add(action.collectTranslationKeys());
+            builder.addAll(action.collectTranslationKeys());
         }
         for (let action of this._failActions) {
-            builder.add(action.collectTranslationKeys());
+            builder.addAll(action.collectTranslationKeys());
         }
         return builder.get();
     }
@@ -536,7 +537,7 @@ export class EASwitch extends EventAction {
         const builder = new SetBuilder<string>();
         for (const actionList of this._actions) {
             for (const action of actionList) {
-                builder.add(action.collectTranslationKeys());
+                builder.addAll(action.collectTranslationKeys());
             }
         }
         return builder.get();
@@ -650,7 +651,7 @@ export class EALoop extends EventAction {
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
         for (let action of this._actions) {
-            builder.add(action.collectTranslationKeys());
+            builder.addAll(action.collectTranslationKeys());
         }
         return builder.get();
     }

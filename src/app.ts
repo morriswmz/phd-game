@@ -76,7 +76,7 @@ class App {
             const allEvents = this._gameEngine.eventEngine.getEvents();
             const builder = new SetBuilder<string>();
             for (let event of allEvents) {
-                builder.add(event.collectTranslationKeys());
+                builder.addAll(event.collectTranslationKeys());
             }
             this._gameEngine.itemRegistry.forEach((item) => {
                 this._localizer.addRequiredKey(item.unlocalizedName);

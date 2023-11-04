@@ -9,20 +9,22 @@ export class SetBuilder<T> {
   /**
    * Adds one or more elements to the set. Can no longer be called after
    * calling `get()`.
-   * @param inputs An element or an array of elements.
    */
-  add(...inputs: (T | T[] | Set<T>)[]): void {
+  add(...inputs: T[]): void {
+    this.addAll(inputs);
+  }
+
+  /**
+   * Adds all elements from an array or another set. Can no longer be called
+   * after calling `get()`.
+   * @param elements A array or a set.
+   */
+  addAll(elements: T[] | ReadonlySet<T>): void {
     if (this._built) {
       throw new Error('Cannot add element(s) after the set is built!');
     }
-    for (let input of inputs) {
-      if (Array.isArray(input) || input instanceof Set) {
-        for (let element of input) {
-          this._set.add(element);
-        }
-      } else {
-        this._set.add(input);
-      }
+    for (let element of elements) {
+      this._set.add(element);
     }
   }
 
