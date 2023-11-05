@@ -3,7 +3,7 @@
  */
 import { Inventory } from '../effect/item';
 import { StatusTable } from '../effect/status';
-import { GameState } from '../gameState';
+import { VariableStore } from '../variableStore';
 import { SetBuilder } from '../utils/collection';
 import { RandomSource } from '../utils/random';
 import { GameEventEngine } from './engine';
@@ -36,7 +36,7 @@ export interface GuiActionProxy {
  * Context needed to evaluate an `EventCondition`.
  */
 export interface EventConditionEvaluationContext {
-    readonly gameState: GameState;
+    readonly variableStore: VariableStore;
     readonly random: RandomSource;
     readonly evaluator: EventExpressionEvaluator;
 }

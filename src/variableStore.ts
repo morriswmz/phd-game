@@ -22,9 +22,9 @@ export class VariableChangedEvent {
 
 }
 
-type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) => void;
+type VariableChangeHandler = (sender: VariableStore, event: VariableChangedEvent) => void;
 
-export class GameState {
+export class VariableStore {
 
     private _variables: Record<string, number> = {};
     private _varLimits: Record<string, [number, number]> = {};

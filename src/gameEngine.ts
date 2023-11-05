@@ -1,5 +1,5 @@
 import { EventActionExecutionContext, GuiActionProxy } from './event/core';
-import { GameState, EndGameState } from './gameState';
+import { VariableStore, EndGameState } from './variableStore';
 import { GuiGame } from './gui/guiGame';
 import { Inventory, ItemRegistry } from './effect/item';
 import { GameEventEngine } from './event/engine';
@@ -32,7 +32,7 @@ export class GameEngine {
     private _statusRegistry: StatusRegistry;
     private _inventory: Inventory;
     private _statusTable: StatusTable;
-    private _gameState: GameState;
+    private _variableStore: VariableStore;
     private _random: AleaRandomSource;
     private _expressionEngine: EventExpressionEngine;
     private _eventEngine: GameEventEngine;
@@ -50,7 +50,7 @@ export class GameEngine {
         this._statusRegistry = new StatusRegistry();
         this._inventory = new Inventory(this._itemRegistry);
         this._statusTable = new StatusTable(this._statusRegistry);
-        this._gameState = new GameState();
+        this._variableStore = new VariableStore();
         this._random = new AleaRandomSource(
             this._config.initialRandomSeed == undefined
                 ? newSeedFromNativeRandom()
@@ -58,14 +58,14 @@ export class GameEngine {
         );
         this._eventEngine = new GameEventEngine();
         this._expressionEngine = new EventExpressionEngine(
-            this._gameState, this._inventory, this._statusTable,
+            this._variableStore, this._inventory, this._statusTable,
             this._random, this._eventEngine);
         this._conditionFactory = 
             new EventConditionFactory(this._expressionEngine);
         this._actionFactory = new EventActionFactory(this._conditionFactory,
                                                      this._expressionEngine);
         this._executionContext = {
-            gameState: this._gameState,
+            variableStore: this._variableStore,
             inventory: this._inventory,
             statusTable: this._statusTable,
             random: this._random,
@@ -76,10 +76,10 @@ export class GameEngine {
     }
 
     /**
-     * Retrieves the game state.
+     * Retrieves the variable store.
      */
-    get gameState(): GameState {
-        return this._gameState;
+    get variableStore(): VariableStore {
+        return this._variableStore;
     }
 
     /**
@@ -209,7 +209,7 @@ export class GameEngine {
         if (!this._dataLoaded) {
             await this.loadGameData();
         }
-        this._gameState.reset();
+        this._variableStore.reset();
         this._inventory.clear();
         this._statusTable.clear();
         if (newRandomSeed) {
@@ -226,7 +226,7 @@ export class GameEngine {
      * Advances one game tick.
      */
     async tick(): Promise<void> {
-        let endGameState = this._gameState.endGameState;
+        let endGameState = this._variableStore.endGameState;
         if (endGameState !== EndGameState.None) {
             // Restart the game
             await this.start(endGameState === EndGameState.Winning);

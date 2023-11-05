@@ -1,4 +1,4 @@
-import { GameState, VariableChangedEvent } from '../gameState';
+import { VariableStore, VariableChangedEvent } from '../variableStore';
 import { GuiModalBox } from './guiModalBox';
 import { GuiBase } from './guiBase';
 import { GameEngine } from '../gameEngine';
@@ -62,9 +62,9 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
         this._fx = new GuiFX(
             this.retrieveElement('fx_container'),
             textEngine);
-        // Handlers for game state updates.
-        this._gameEngine.gameState.onVariableChanged = (gs, e) => {
-            this.handleVariableUpdate(gs, e);
+        // Handlers for variable updates.
+        this._gameEngine.variableStore.onVariableChanged = (sender, e) => {
+            this.handleVariableUpdate(sender, e);
         };
         // Event handlers for items/status list.
         this._itemList.onItemClicked = item => {
@@ -102,8 +102,8 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
         return <T>el;
     }
 
-    handleVariableUpdate(gs: GameState, e: VariableChangedEvent): void {
-        this._statsBar.handleVariableUpdate(gs, e);
+    handleVariableUpdate(sender: VariableStore, e: VariableChangedEvent): void {
+        this._statsBar.handleVariableUpdate(sender, e);
     }
 
     displayMessage(message: string, confirm: string, icon?: string, fx?: string): Promise<void> {

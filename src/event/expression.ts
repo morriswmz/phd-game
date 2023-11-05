@@ -1,5 +1,5 @@
 import { FunctionTable, ExpressionEvaluator, CompiledExpression, FunctionTableProvider, ExpressionCompiler, compileExpression } from '../utils/expression';
-import { GameState } from '../gameState';
+import { VariableStore } from '../variableStore';
 import { EventOccurrenceTracker } from './core';
 import { RandomSource } from '../utils/random';
 import { Inventory } from '../effect/item';
@@ -57,16 +57,17 @@ export type EventFunctionTableProvider = FunctionTableProvider<EventExpressionFu
 export class EventExpressionEngine implements EventFunctionTableProvider, EventExpressionCompiler, EventExpressionEvaluator {
 
     private _fTable: EventExpressionFunctionTable;
-    private _gameState: GameState;
+    private _variableStore: VariableStore;
     private _inventory: Inventory;
     private _statusTable: StatusTable;
     private _random: RandomSource
     private _eventOccurrenceTracker: EventOccurrenceTracker;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(gs: GameState, inventory: Inventory, statusTable: StatusTable,
-                random: RandomSource, tracker: EventOccurrenceTracker) {
-        this._gameState = gs;
+    constructor(variableStore: VariableStore, inventory: Inventory,
+                statusTable: StatusTable, random: RandomSource,
+                tracker: EventOccurrenceTracker) {
+        this._variableStore = variableStore;
         this._inventory = inventory;
         this._statusTable = statusTable;
         this._random = random;
@@ -76,13 +77,13 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
 
     private _initFunctionTable(): EventExpressionFunctionTable {
         return {
-            getVar: varName => this._gameState.getVar(varName, true),
-            setVarLimits: (varName: string, lb: number, ub: number) => this._gameState.setVarLimits(varName, lb, ub),
+            getVar: varName => this._variableStore.getVar(varName, true),
+            setVarLimits: (varName: string, lb: number, ub: number) => this._variableStore.setVarLimits(varName, lb, ub),
             eventOccurred: id => this._eventOccurrenceTracker.getEventOccurrenceCount(id) > 0,
-            upperBound: varName => this._gameState.getVarLimits(varName)[1],
-            lowerBound: varName => this._gameState.getVarLimits(varName)[0],
+            upperBound: varName => this._variableStore.getVarLimits(varName)[1],
+            lowerBound: varName => this._variableStore.getVarLimits(varName)[0],
             itemCount: id => this._inventory.count(id),
-            totalMonths: () => this._gameState.getVar('year', true) * 12 + this._gameState.getVar('month', true),
+            totalMonths: () => this._variableStore.getVar('year', true) * 12 + this._variableStore.getVar('month', true),
             calcEffectValue: (id, base) => {
                 const eItem = this._inventory.calcCombinedEffectValue(id);
                 const eStatus = this._statusTable.calcCombinedEffectValue(id);

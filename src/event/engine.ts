@@ -1,5 +1,5 @@
 import { GameEvent, EventAction, EventActionExecutionContext, EventOccurrenceTracker } from './core';
-import { EndGameState } from '../gameState';
+import { EndGameState } from '../variableStore';
 import { PriorityQueue } from '../utils/priorityQueue';
 
 interface GameEventInfo {
@@ -202,7 +202,7 @@ export class GameEventEngine implements EventOccurrenceTracker {
                          context: EventActionExecutionContext): Promise<boolean> {
         for (let a of actions) {
             await a.execute(context);
-            if (context.gameState.endGameState !== EndGameState.None) {
+            if (context.variableStore.endGameState !== EndGameState.None) {
                 // Stop processing further actions or events
                 return true;
             }

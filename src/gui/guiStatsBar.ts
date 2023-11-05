@@ -1,5 +1,5 @@
 import { CompiledEventExpression, EventExpressionCompiler, EventExpressionEngine, EventExpressionEvaluator } from '../event/expression';
-import { GameState, VariableChangedEvent } from '../gameState';
+import { VariableStore, VariableChangedEvent } from '../variableStore';
 import { GuiBase } from './guiBase';
 import { GameTextEngine } from './textEngine';
 
@@ -21,9 +21,9 @@ export interface GuiStatsBarItemDefinition {
   text: string;
   // Determines if the item shows on the left or the right side.
   side?: 'left' | 'right';
-  // If the rendering of `text` depends on any `GameState` variables, they need
-  // to listed here to the stats display can be updated properly once the
-  // variables change.
+  // If the rendering of `text` depends on any variables in `VariableStore`,
+  // they need to listed here to the stats display can be updated properly once
+  // the variables change.
   updateTrigger?: GuiStatsBarItemUpdateTrigger;
   // Optional list of conditional styles to be applied. If multiple conditions
   // are met, only the styles associated with the first one will be applied.
@@ -116,7 +116,7 @@ export class GuiStatsBar extends GuiBase<HTMLElement> {
     }
   }
 
-  handleVariableUpdate(gs: GameState, e: VariableChangedEvent): void {
+  handleVariableUpdate(sender: VariableStore, e: VariableChangedEvent): void {
     if (e.clear) return;
     if (e.varName in this._itemsByTriggeringVariable) {
       for (const item of this._itemsByTriggeringVariable[e.varName]) {

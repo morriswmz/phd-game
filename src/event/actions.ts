@@ -1,4 +1,4 @@
-import { EndGameState } from '../gameState';
+import { EndGameState } from '../variableStore';
 import { EventAction, EventActionExecutionContext, EventCondition } from './core';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
@@ -75,7 +75,7 @@ export class EventActionFactory {
  */
 export class EALog extends EventAction {
     
-    constructor(private _message: string, private _dumpGameState: boolean) {
+    constructor(private _message: string, private _dumpVariables: boolean) {
         super();
     }
     
@@ -89,20 +89,20 @@ export class EALog extends EventAction {
      *     {
      *         "id": "Log",
      *         "message": string,
-     *         "dumpGameState": boolean | undefined
+     *         "dumpVariables": boolean | undefined
      *     }
      *     ```
      * @param context Not used.
      */
     static fromJSONObject(obj: any, context: EventActionDeserializationContext): EALog {
         if (obj['message'] == undefined) throw new Error('Message missing.');
-        return new EALog(obj['message'], obj['dumpGameState'] || false);
+        return new EALog(obj['message'], obj['dumpVariables'] || false);
     }
 
     async execute(context: EventActionExecutionContext): Promise<void> {
         console.log(this._message);
-        if (this._dumpGameState) {
-            context.gameState.dumpToConsole();
+        if (this._dumpVariables) {
+            context.variableStore.dumpToConsole();
         }
     }
 
@@ -659,7 +659,7 @@ export class EALoop extends EventAction {
 }
 
 /**
- * Updates one game state variables.
+ * Updates one variable in the variable store.
  */
 export class EAUpdateVariable extends EventAction {
 
@@ -695,7 +695,7 @@ export class EAUpdateVariable extends EventAction {
     }
 
     async execute(context: EventActionExecutionContext): Promise<void> {
-        context.gameState.setVar(this._varName,
+        context.variableStore.setVar(this._varName,
                                  context.evaluator.eval(this._updateExpr),
                                  false);
     }
@@ -703,7 +703,7 @@ export class EAUpdateVariable extends EventAction {
 }
 
 /**
- * Updates one or more game state variables.
+ * Updates one or more variables in the variable store.
  */
 export class EAUpdateVariables extends EventAction {
 
@@ -742,7 +742,7 @@ export class EAUpdateVariables extends EventAction {
 
     async execute(context: EventActionExecutionContext): Promise<void> {
         for (let i = 0;i < this._varNames.length;i++) {
-            context.gameState.setVar(
+            context.variableStore.setVar(
                 this._varNames[i],
                 context.evaluator.eval(this._updateExprs[i])
             );
@@ -796,7 +796,7 @@ export class EAUpdateVariableLimits extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         for (const varName in this._limitsByVarName) {
             const limits = this._limitsByVarName[varName];
-            context.gameState.setVarLimits(varName, limits[0], limits[1]);
+            context.variableStore.setVarLimits(varName, limits[0], limits[1]);
         }
     }
 }
@@ -950,7 +950,7 @@ export class EAEndGame extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         await context.actionProxy.displayMessage(this._message, this._confirm,
                                                  '', this._fx);
-        context.gameState.endGameState = this._winning
+        context.variableStore.endGameState = this._winning
             ? EndGameState.Winning
             : EndGameState.Losing;
     }

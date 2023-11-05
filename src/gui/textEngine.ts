@@ -1,5 +1,5 @@
 import { LocalizationDictionary } from '../i18n/localization';
-import { GameState } from '../gameState';
+import { VariableStore } from '../variableStore';
 import { isVariableName } from '../utils/expression';
 import { RandomSource } from '../utils/random';
 
@@ -8,8 +8,8 @@ export interface GameTextEngine {
      * Renders the source text into HTML text.
      * Pipeline: original string -> variable interpolation + styling
      * Formats:
-     * * {{varName:ndigits}} Game state variable interpolation, number of
-     *                       digits is optional.
+     * * {{varName:ndigits}} Variable interpolation, number of digits is
+     *                       optional.
      * * {{@specialVarName}} Special variable interpolation. See
      *                       `_evalSpecialVariable()` for more details.
      * * __text__ underline
@@ -43,7 +43,8 @@ export interface GameTextEngine {
 
 export class SimpleGameTextEngine implements GameTextEngine {
     
-    constructor(private _ldict: LocalizationDictionary, private _gs: GameState,
+    constructor(private _ldict: LocalizationDictionary,
+                private _variableStore: VariableStore,
                 private _random: RandomSource) {
 
     }
@@ -56,8 +57,8 @@ export class SimpleGameTextEngine implements GameTextEngine {
                 let specialVarName = p1.substring(1);
                 return this._evalSpecialVariable(specialVarName) || match;
             } else if (isVariableName(p1)) {
-                // Game state variables
-                let val = this._gs.getVar(p1, false);
+                // Variables in VariableStore
+                let val = this._variableStore.getVar(p1, false);
                 if (val == undefined) {
                     return match;
                 }

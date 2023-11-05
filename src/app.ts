@@ -48,7 +48,7 @@ class App {
             console.warn('Missing language file!');
         }
         const textEngine = new SimpleGameTextEngine(this._localizer,
-                                                    this._gameEngine.gameState,
+                                                    this._gameEngine.variableStore,
                                                     this._gameEngine.random);
         if (!this._config.guiDefinitionUrl) {
             throw new Error('Missing GUI config file!');
