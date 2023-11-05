@@ -1,9 +1,9 @@
-import { EndGameState } from '../variableStore';
 import { EventAction, EventActionExecutionContext, EventCondition } from './core';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
 import { ECExpression, EventConditionFactory } from './conditions';
 import { SetBuilder } from '../utils/collection';
+import { EndGameState } from '../endGameState';
 
 // Note on the usage of typeof.
 // For JSON-like objects, it is safe to check the types of numbers/strings using
@@ -950,9 +950,8 @@ export class EAEndGame extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         await context.actionProxy.displayMessage(this._message, this._confirm,
                                                  '', this._fx);
-        context.variableStore.endGameState = this._winning
-            ? EndGameState.Winning
-            : EndGameState.Losing;
+        context.setEndGameState(
+            this._winning ? EndGameState.Win : EndGameState.Loss);
     }
 
     collectTranslationKeys(): Set<string> {

@@ -1,10 +1,3 @@
-
-export enum EndGameState {
-    None,
-    Winning,
-    Losing
-};
-
 export class VariableChangedEvent {
 
     // Indicates whether all variables are cleared.
@@ -29,9 +22,9 @@ export class VariableStore {
     private _variables: Record<string, number> = {};
     private _varLimits: Record<string, [number, number]> = {};
 
-    // Public variables
-    endGameState: EndGameState = EndGameState.None;
-    // event handlers
+    /**
+     * Variable changed event handler.
+     */
     onVariableChanged: VariableChangeHandler | undefined;
 
     constructor() {}
@@ -115,10 +108,9 @@ export class VariableStore {
     }
 
     /**
-     * Resets all internal states for a new game.
+     * Resets all variables.
      */
     reset(): void {
-        this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
     }

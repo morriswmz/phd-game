@@ -8,6 +8,7 @@ import { SetBuilder } from '../utils/collection';
 import { RandomSource } from '../utils/random';
 import { GameEventEngine } from './engine';
 import { EventExpressionEvaluator, CompiledEventExpression } from './expression';
+import { EndGameState } from '../endGameState';
 
 /**
  * Delegates the execution of actual GUI related actions.
@@ -62,6 +63,8 @@ export interface EventActionExecutionContext extends EventConditionEvaluationCon
     readonly statusTable: StatusTable;
     readonly eventEngine: GameEventEngine;
     readonly actionProxy: GuiActionProxy;
+    getEndGameState(): EndGameState;
+    setEndGameState(state: EndGameState): void;
 }
 
 const EMPTY_TRANSLATION_KEYS: ReadonlySet<string> = new Set();

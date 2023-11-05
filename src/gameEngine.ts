@@ -1,5 +1,5 @@
 import { EventActionExecutionContext, GuiActionProxy } from './event/core';
-import { VariableStore, EndGameState } from './variableStore';
+import { VariableStore } from './variableStore';
 import { GuiGame } from './gui/guiGame';
 import { Inventory, ItemRegistry } from './effect/item';
 import { GameEventEngine } from './event/engine';
@@ -9,6 +9,7 @@ import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from
 import { GameEventLoader } from './event/loader';
 import { StatusRegistry, StatusTable } from './effect/status';
 import { AleaRandomSource, RandomSource } from './utils/random';
+import { EndGameState } from './endGameState';
 
 export interface GameConfig {
     initialRandomSeed?: string;
@@ -33,6 +34,7 @@ export class GameEngine {
     private _inventory: Inventory;
     private _statusTable: StatusTable;
     private _variableStore: VariableStore;
+    private _endGameState: EndGameState;
     private _random: AleaRandomSource;
     private _expressionEngine: EventExpressionEngine;
     private _eventEngine: GameEventEngine;
@@ -51,6 +53,7 @@ export class GameEngine {
         this._inventory = new Inventory(this._itemRegistry);
         this._statusTable = new StatusTable(this._statusRegistry);
         this._variableStore = new VariableStore();
+        this._endGameState = EndGameState.None;
         this._random = new AleaRandomSource(
             this._config.initialRandomSeed == undefined
                 ? newSeedFromNativeRandom()
@@ -71,7 +74,9 @@ export class GameEngine {
             random: this._random,
             evaluator: this._expressionEngine,
             eventEngine: this._eventEngine,
-            actionProxy: ap
+            actionProxy: ap,
+            getEndGameState: () => this._endGameState,
+            setEndGameState: (state) => this._endGameState = state,
         };
     }
 
@@ -212,6 +217,7 @@ export class GameEngine {
         this._variableStore.reset();
         this._inventory.clear();
         this._statusTable.clear();
+        this._endGameState = EndGameState.None;
         if (newRandomSeed) {
             this._random.reset(newSeedFromNativeRandom());
         } else {
@@ -226,10 +232,9 @@ export class GameEngine {
      * Advances one game tick.
      */
     async tick(): Promise<void> {
-        let endGameState = this._variableStore.endGameState;
-        if (endGameState !== EndGameState.None) {
+        if (this._endGameState !== EndGameState.None) {
             // Restart the game
-            await this.start(endGameState === EndGameState.Winning);
+            await this.start(this._endGameState === EndGameState.Win);
             return;
         }
         this._eventEngine.trigger('Tick', 1.0, 0);
