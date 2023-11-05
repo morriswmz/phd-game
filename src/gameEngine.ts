@@ -1,13 +1,13 @@
 import { EventActionExecutionContext, GuiActionProxy } from './event/core';
 import { GameState, EndGameState } from './gameState';
 import { GuiGame } from './gui/guiGame';
-import { ItemRegistry } from './effect/item';
+import { Inventory, ItemRegistry } from './effect/item';
 import { GameEventEngine } from './event/engine';
 import { EventExpressionEngine } from './event/expression';
 import { EventActionFactory, EALog, EADisplayMessage, EADisplayRandomMessage, EADisplayChoices, EARandom, EACoinFlip, EAUpdateVariable, EAUpdateVariables, EAGiveItem, EAUpdateItemAmounts, EAEndGame, EASetStatus, EASwitch, EAUpdateVariableLimits, EATriggerEvents, EALoop, EAEnableEvents, EADisableEvents } from './event/actions';
 import { EventConditionFactory, ECExpression, ECAll, ECAny, ECSome, ECNot } from './event/conditions';
 import { GameEventLoader } from './event/loader';
-import { StatusRegistry } from './effect/status';
+import { StatusRegistry, StatusTable } from './effect/status';
 import { AleaRandomSource, RandomSource } from './utils/random';
 
 export interface GameConfig {
@@ -27,9 +27,11 @@ function newSeedFromNativeRandom(): string {
 export class GameEngine {
 
     private _config: GameConfig;
+    private _actionProxy: GuiActionProxy;
     private _itemRegistry: ItemRegistry;
     private _statusRegistry: StatusRegistry;
-    private _actionProxy: GuiActionProxy;
+    private _inventory: Inventory;
+    private _statusTable: StatusTable;
     private _gameState: GameState;
     private _random: AleaRandomSource;
     private _expressionEngine: EventExpressionEngine;
@@ -46,23 +48,26 @@ export class GameEngine {
         this._actionProxy = ap;
         this._itemRegistry = new ItemRegistry();
         this._statusRegistry = new StatusRegistry();
-        this._gameState = new GameState(this._itemRegistry,
-                                        this._statusRegistry);
+        this._inventory = new Inventory(this._itemRegistry);
+        this._statusTable = new StatusTable(this._statusRegistry);
+        this._gameState = new GameState();
         this._random = new AleaRandomSource(
             this._config.initialRandomSeed == undefined
                 ? newSeedFromNativeRandom()
                 : this._config.initialRandomSeed
         );
         this._eventEngine = new GameEventEngine();
-        this._expressionEngine = new EventExpressionEngine(this._gameState,
-                                                           this._random,
-                                                           this._eventEngine);
+        this._expressionEngine = new EventExpressionEngine(
+            this._gameState, this._inventory, this._statusTable,
+            this._random, this._eventEngine);
         this._conditionFactory = 
             new EventConditionFactory(this._expressionEngine);
         this._actionFactory = new EventActionFactory(this._conditionFactory,
                                                      this._expressionEngine);
         this._executionContext = {
             gameState: this._gameState,
+            inventory: this._inventory,
+            statusTable: this._statusTable,
             random: this._random,
             evaluator: this._expressionEngine,
             eventEngine: this._eventEngine,
@@ -96,6 +101,20 @@ export class GameEngine {
      */
     get statusRegistry(): StatusRegistry {
         return this._statusRegistry;
+    }
+
+    /**
+     * Retrieves the inventory of the current game.
+     */
+    get inventory(): Inventory {
+        return this._inventory;
+    }
+
+    /**
+     * Retrieves the status table of the current game.
+     */
+    get statusTable(): StatusTable {
+        return this._statusTable;
     }
 
     /**
@@ -191,6 +210,8 @@ export class GameEngine {
             await this.loadGameData();
         }
         this._gameState.reset();
+        this._inventory.clear();
+        this._statusTable.clear();
         if (newRandomSeed) {
             this._random.reset(newSeedFromNativeRandom());
         } else {
@@ -213,7 +234,7 @@ export class GameEngine {
         }
         this._eventEngine.trigger('Tick', 1.0, 0);
         while (await this._eventEngine.processNextTrigger(this._executionContext));
-        this._gameState.playerStatus.tick();
+        this._statusTable.tick();
     }
     
 }

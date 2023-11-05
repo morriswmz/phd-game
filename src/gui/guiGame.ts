@@ -50,11 +50,11 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             this.retrieveElement('modal_container'), textEngine);
         this._itemList = new GuiItemList(
             this.retrieveElement('items_window'), textEngine,
-            this._gameEngine.gameState.playerInventory,
+            this._gameEngine.inventory,
             this._gameEngine.itemRegistry, definition.itemList);
         this._statusList = new GuiStatusList(
             this.retrieveElement('status_window'), textEngine,
-            this._gameEngine.gameState.playerStatus,
+            this._gameEngine.statusTable,
             this._gameEngine.statusRegistry, definition.statusList);
         this._footer = new GuiFooter(
             this.retrieveElement('footer'), textEngine, this._modalBox,

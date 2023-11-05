@@ -2,6 +2,8 @@ import { FunctionTable, ExpressionEvaluator, CompiledExpression, FunctionTablePr
 import { GameState } from '../gameState';
 import { EventOccurrenceTracker } from './core';
 import { RandomSource } from '../utils/random';
+import { Inventory } from '../effect/item';
+import { StatusTable } from '../effect/status';
 
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
@@ -56,13 +58,17 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
 
     private _fTable: EventExpressionFunctionTable;
     private _gameState: GameState;
+    private _inventory: Inventory;
+    private _statusTable: StatusTable;
     private _random: RandomSource
     private _eventOccurrenceTracker: EventOccurrenceTracker;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(gs: GameState, random: RandomSource,
-                tracker: EventOccurrenceTracker) {
+    constructor(gs: GameState, inventory: Inventory, statusTable: StatusTable,
+                random: RandomSource, tracker: EventOccurrenceTracker) {
         this._gameState = gs;
+        this._inventory = inventory;
+        this._statusTable = statusTable;
         this._random = random;
         this._eventOccurrenceTracker = tracker;
         this._fTable = this._initFunctionTable();
@@ -75,14 +81,14 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
             eventOccurred: id => this._eventOccurrenceTracker.getEventOccurrenceCount(id) > 0,
             upperBound: varName => this._gameState.getVarLimits(varName)[1],
             lowerBound: varName => this._gameState.getVarLimits(varName)[0],
-            itemCount: id => this._gameState.playerInventory.count(id),
+            itemCount: id => this._inventory.count(id),
             totalMonths: () => this._gameState.getVar('year', true) * 12 + this._gameState.getVar('month', true),
             calcEffectValue: (id, base) => {
-                const eItem = this._gameState.playerInventory.calcCombinedEffectValue(id);
-                const eStatus = this._gameState.playerStatus.calcCombinedEffectValue(id);
+                const eItem = this._inventory.calcCombinedEffectValue(id);
+                const eStatus = this._statusTable.calcCombinedEffectValue(id);
                 return (base + eItem[0] + eStatus[0]) * eItem[1] * eStatus[1];
             },
-            hasStatus: id => this._gameState.playerStatus.count(id) > 0,
+            hasStatus: id => this._statusTable.count(id) > 0,
             random: () => this._random.next(),
             randi: x => Math.floor(this._random.next() * x),
             max: Math.max,

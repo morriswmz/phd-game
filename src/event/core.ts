@@ -1,6 +1,8 @@
 /**
  * Core definitions for the event system.
  */
+import { Inventory } from '../effect/item';
+import { StatusTable } from '../effect/status';
 import { GameState } from '../gameState';
 import { SetBuilder } from '../utils/collection';
 import { RandomSource } from '../utils/random';
@@ -56,6 +58,8 @@ export abstract class EventCondition {
  * Context needed to execute an `EventAction`.
  */
 export interface EventActionExecutionContext extends EventConditionEvaluationContext {
+    readonly inventory: Inventory;
+    readonly statusTable: StatusTable;
     readonly eventEngine: GameEventEngine;
     readonly actionProxy: GuiActionProxy;
 }

@@ -840,9 +840,9 @@ export class EAGiveItem extends EventAction {
     async execute(context: EventActionExecutionContext): Promise<void> {
         let amount = context.evaluator.eval(this._amountExpr);
         if (amount > 0) {
-            context.gameState.playerInventory.add(this._itemId, amount);
+            context.inventory.add(this._itemId, amount);
         } else if (amount < 0) {
-            context.gameState.playerInventory.remove(this._itemId, -amount);
+            context.inventory.remove(this._itemId, -amount);
         }
     }
 
@@ -894,9 +894,9 @@ export class EAUpdateItemAmounts extends EventAction {
             const itemId = this._itemIds[i];
             const amount = context.evaluator.eval(this._updateExprs[i]);
             if (amount > 0) {
-                context.gameState.playerInventory.add(itemId, amount);
+                context.inventory.add(itemId, amount);
             } else if (amount < 0) {
-                context.gameState.playerInventory.remove(itemId, -amount);
+                context.inventory.remove(itemId, -amount);
             }
         }
     }
@@ -997,9 +997,9 @@ export class EASetStatus extends EventAction {
 
     async execute(context: EventActionExecutionContext): Promise<void> {
         if (this._on) {
-            context.gameState.playerStatus.add(this._statusId);
+            context.statusTable.add(this._statusId);
         } else {
-            context.gameState.playerStatus.remove(this._statusId);
+            context.statusTable.remove(this._statusId);
         }
     }
 

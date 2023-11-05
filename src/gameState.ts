@@ -1,7 +1,4 @@
 
-import { Inventory, ItemRegistry } from './effect/item';
-import { StatusTable, StatusRegistry } from './effect/status';
-
 export enum EndGameState {
     None,
     Winning,
@@ -29,8 +26,6 @@ type VariableChangeHandler = (sender: GameState, event: VariableChangedEvent) =>
 
 export class GameState {
 
-    private _playerInventory: Inventory;
-    private _playerStatus: StatusTable;
     private _variables: Record<string, number> = {};
     private _varLimits: Record<string, [number, number]> = {};
 
@@ -39,18 +34,7 @@ export class GameState {
     // event handlers
     onVariableChanged: VariableChangeHandler | undefined;
 
-    constructor(itemRegistry: ItemRegistry, statusRegistry: StatusRegistry) {
-        this._playerInventory = new Inventory(itemRegistry);
-        this._playerStatus = new StatusTable(statusRegistry);
-    }
-
-    get playerInventory(): Inventory {
-        return this._playerInventory;
-    }
-
-    get playerStatus(): StatusTable {
-        return this._playerStatus;
-    }
+    constructor() {}
 
     /**
      * Sets a numeric variable.
@@ -134,8 +118,6 @@ export class GameState {
      * Resets all internal states for a new game.
      */
     reset(): void {
-        this.playerInventory.clear();
-        this.playerStatus.clear();
         this.endGameState = EndGameState.None;
         this.dispatchChangeEvent(new VariableChangedEvent(true, '', 0, 0));
         this._variables = {};
@@ -148,14 +130,6 @@ export class GameState {
             const limits = this._varLimits[varName];
             const limitsStr = limits ? ` ([${limits[0]}, ${limits[1]}])` : '';
             lines.push(`${varName}: ${this._variables[varName]}${limitsStr}`);
-        }
-        lines.push('[Items]');
-        for (const itemId in this._playerInventory.items) {
-            lines.push(`${itemId} x${this._playerInventory.items[itemId][1]}`);
-        }
-        lines.push('[Status]');
-        for (const statusId in this._playerStatus.items) {
-            lines.push(statusId);
         }
         console.log(lines.join('\n'));
     }
