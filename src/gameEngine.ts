@@ -75,7 +75,6 @@ export class GameEngine {
             evaluator: this._expressionEngine,
             eventEngine: this._eventEngine,
             actionProxy: ap,
-            getEndGameState: () => this._endGameState,
             setEndGameState: (state) => this._endGameState = state,
         };
     }
@@ -225,20 +224,24 @@ export class GameEngine {
         }
         this._eventEngine.reset();
         this._eventEngine.trigger('Initialization', 1.0, 0);
-        while (await this._eventEngine.processNextTrigger(this._executionContext));
     }
 
     /**
      * Advances one game tick.
      */
     async tick(): Promise<void> {
-        if (this._endGameState !== EndGameState.None) {
-            // Restart the game
-            await this.start(this._endGameState === EndGameState.Win);
-            return;
-        }
         this._eventEngine.trigger('Tick', 1.0, 0);
-        while (await this._eventEngine.processNextTrigger(this._executionContext));
+        while (true) {
+            const pending = await this._eventEngine.processNextTrigger(
+                this._executionContext);
+            if (this._endGameState !== EndGameState.None) {
+                // Restart the game
+                await this.start(this._endGameState === EndGameState.Win);
+                return;
+            } else if (!pending) {
+                break;
+            }
+        }
         this._statusTable.tick();
     }
     

@@ -1,6 +1,5 @@
-import { GameEvent, EventAction, EventActionExecutionContext, EventOccurrenceTracker } from './core';
+import { GameEvent, EventActionExecutionContext, EventOccurrenceTracker, EventActionResult } from './core';
 import { PriorityQueue } from '../utils/priorityQueue';
-import { EndGameState } from '../endGameState';
 
 interface GameEventInfo {
     event: GameEvent;
@@ -157,9 +156,7 @@ export class GameEventEngine implements EventOccurrenceTracker {
         const events = this._eventsByTrigger.get(triggerId);
         if (events == undefined) return !this._pendingTriggers.empty();
         let exclusions: { [key: string]: boolean; } = {};
-        let gameEnded = false;
         for (let e of events) {
-            if (gameEnded) break;
             const info = this._eventInfoById.get(e.id) as GameEventInfo;
             // Skip disabled events.
             if (info.disabled) continue;
@@ -188,26 +185,16 @@ export class GameEventEngine implements EventOccurrenceTracker {
             // Mark as occurred
             ++info.occurrenceCount;
             // Execute actions
-            gameEnded = await this.executeActions(e.actions, context);
+            const result = await e.actions.execute(context);
             // Once
             if (e.once) {
                 info.disabled = true;
             }
+            // Check end condition
+            if (result === EventActionResult.StopExecutionGlobally) break;
         }
         this._ongoingTrigger = null;
         return !this._pendingTriggers.empty();
-    }
-
-    async executeActions(actions: EventAction[],
-                         context: EventActionExecutionContext): Promise<boolean> {
-        for (let a of actions) {
-            await a.execute(context);
-            if (context.getEndGameState() !== EndGameState.None) {
-                // Stop processing further actions or events
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

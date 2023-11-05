@@ -1,4 +1,4 @@
-import { EventAction, EventActionExecutionContext, EventCondition } from './core';
+import { EventAction, EventActionExecutionContext, EventActionList, EventActionResult, EventCondition } from './core';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
 import { ECExpression, EventConditionFactory } from './conditions';
@@ -99,11 +99,12 @@ export class EALog extends EventAction {
         return new EALog(obj['message'], obj['dumpVariables'] || false);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         console.log(this._message);
         if (this._dumpVariables) {
             context.variableStore.dumpToConsole();
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -142,10 +143,11 @@ export class EADisplayMessage extends EventAction {
                                     obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         await context.actionProxy.displayMessage(this._message,
                                                  this._confirm,
                                                  this._icon);
+        return EventActionResult.Ok;
     }
 
     collectTranslationKeys(): Set<string> {
@@ -190,11 +192,12 @@ export class EADisplayRandomMessage extends EventAction {
                                           obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         const msgId = Math.floor(context.random.next() * this._messages.length);
         await context.actionProxy.displayMessage(this._messages[msgId],
                                                  this._confirm,
                                                  this._icon);
+        return EventActionResult.Ok;
     }
 
     collectTranslationKeys(): Set<string> {
@@ -214,7 +217,7 @@ export class EADisplayChoices extends EventAction {
 
     constructor(private _message: string, private _choiceMessages: string[],
                 private _requirements: CompiledEventExpression[],
-                private _actions: EventAction[][], private _icon: string)
+                private _actions: EventActionList[], private _icon: string)
     {
         super();
         if (_choiceMessages.length !== _requirements.length || _choiceMessages.length !== _actions.length) {
@@ -250,7 +253,7 @@ export class EADisplayChoices extends EventAction {
         if (!Array.isArray(obj['choices'])) throw new Error('Choices are missing.');
         let choiceMessages: string[] = [];
         let requirements: CompiledEventExpression[] = [];
-        let actions: EventAction[][] = [];
+        let actions: EventActionList[] = [];
         for (let c of obj['choices']) {
             if (c['message'] == undefined) {
                 throw new Error('Missing message for the current choice.');
@@ -259,7 +262,7 @@ export class EADisplayChoices extends EventAction {
             let curActions = Array.isArray(c['actions'])
                 ? context.actionFactory.fromJSONArray(c['actions'])
                 : [];
-            actions.push(curActions);
+            actions.push(new EventActionList(curActions));
             // requirement
             if (c['requirement'] != undefined) {
                 requirements.push(
@@ -272,7 +275,7 @@ export class EADisplayChoices extends EventAction {
                                     requirements, actions, obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         // Build choice array according to requirements.
         let choices: Array<[string, number]> = [];
         for (let i = 0;i < this._choiceMessages.length;i++) {
@@ -284,9 +287,7 @@ export class EADisplayChoices extends EventAction {
                                                                 choices,
                                                                 this._icon);
         let actions = this._actions[choiceId];
-        for (let a of actions) {
-            await a.execute(context);
-        }
+        return actions.execute(context);
     }
 
     collectTranslationKeys(): Set<string> {
@@ -294,9 +295,7 @@ export class EADisplayChoices extends EventAction {
         builder.add(this._message);
         builder.addAll(this._choiceMessages);
         for (const actionList of this._actions) {
-            for (const action of actionList) {
-                builder.addAll(action.collectTranslationKeys());
-            }
+            builder.addAll(actionList.collectTranslationKeys());
         }
         return builder.get();
     }
@@ -309,10 +308,10 @@ export class EADisplayChoices extends EventAction {
  */
 export class EARandom extends EventAction {
 
-    private _actions: EventAction[][];
+    private _actions: EventActionList[];
     private _weightExprs: CompiledEventExpression[];
 
-    constructor(actions: EventAction[][], weightExprs: CompiledEventExpression[]) {
+    constructor(actions: EventActionList[], weightExprs: CompiledEventExpression[]) {
         super();
         if (actions.length !== weightExprs.length) {
             throw new Error('The number of weights must match the number of actions.');
@@ -347,7 +346,7 @@ export class EARandom extends EventAction {
             throw new Error('Missing group definitions.');
         }
         let weightExprs: CompiledEventExpression[] = [];
-        let actions: EventAction[][] = [];
+        let actions: EventActionList[] = [];
         for (let o of obj['groups']) {
             let weight = o['weight'];
             if (weight == undefined) {
@@ -360,26 +359,23 @@ export class EARandom extends EventAction {
                 throw new Error('Missing actions.');
             }
             weightExprs.push(context.expressionCompiler.compile(weight));
-            actions.push(context.actionFactory.fromJSONArray(o['actions']));
+            actions.push(new EventActionList(
+                context.actionFactory.fromJSONArray(o['actions'])));
         }
         return new EARandom(actions, weightExprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         let idx = weightedSample(
             this._weightExprs.map(item => context.evaluator.eval(item)),
             () => context.random.next());
-        for (let a of this._actions[idx]) {
-            await a.execute(context);
-        }
+        return this._actions[idx].execute(context);
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>()
         for (const actionList of this._actions) {
-            for (const action of actionList) {
-                builder.addAll(action.collectTranslationKeys());
-            }
+            builder.addAll(actionList.collectTranslationKeys());
         }
         return builder.get();
     }
@@ -394,8 +390,8 @@ export class EARandom extends EventAction {
 export class EACoinFlip extends EventAction {
 
     constructor(private _p: CompiledEventExpression,
-                private _successActions: EventAction[],
-                private _failActions: EventAction[])
+                private _successActionList: EventActionList,
+                private _failActionList: EventActionList)
     {
         super();
     }
@@ -429,32 +425,25 @@ export class EACoinFlip extends EventAction {
             ? context.actionFactory.fromJSONArray(obj['fail'])
             : [];
         return new EACoinFlip(context.expressionCompiler.compile(p),
-                              successActions, failActions);
+                              new EventActionList(successActions),
+                              new EventActionList(failActions));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         let p = context.evaluator.eval(this._p);
         if (p < 0) p = 0;
         let coinFlip = context.random.next();
         if (coinFlip < p) {
-            for (let a of this._successActions) {
-                await a.execute(context);
-            }
+            return this._successActionList.execute(context);
         } else {
-            for (let a of this._failActions) {
-                await a.execute(context);
-            }
+            return this._failActionList.execute(context);
         }
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
-        for (let action of this._successActions) {
-            builder.addAll(action.collectTranslationKeys());
-        }
-        for (let action of this._failActions) {
-            builder.addAll(action.collectTranslationKeys());
-        }
+        builder.addAll(this._successActionList.collectTranslationKeys());
+        builder.addAll(this._failActionList.collectTranslationKeys());
         return builder.get();
     }
 
@@ -469,7 +458,7 @@ export class EACoinFlip extends EventAction {
 export class EASwitch extends EventAction {
 
     constructor(private _conditions: EventCondition[],
-                private _actions: EventAction[][]) {
+                private _actions: EventActionList[]) {
         super();
     }
 
@@ -500,7 +489,7 @@ export class EASwitch extends EventAction {
             throw new Error('Expecting an array of branches.');
         }
         let conditions: EventCondition[] = [];
-        let actions: EventAction[][] = [];
+        let actions: EventActionList[] = [];
         for (let branch of branches) {
             if (branch['condition'] == undefined) {
                 throw new Error('Condition is required.');
@@ -515,30 +504,26 @@ export class EASwitch extends EventAction {
             if (!Array.isArray(branch['actions'])) {
                 throw new Error('Missing actions.');
             }
-            actions.push(
-                context.actionFactory.fromJSONArray(branch['actions']));
+            actions.push(new EventActionList(
+                context.actionFactory.fromJSONArray(branch['actions'])));
         }
         return new EASwitch(conditions, actions);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         // Check operation
         for (let i = 0; i < this._conditions.length; i++) {
             if (this._conditions[i].check(context)) {
-                for (let action of this._actions[i]) {
-                    await action.execute(context);
-                }
-                break;
+                return this._actions[i].execute(context);
             }
         }
+        return EventActionResult.Ok;
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
         for (const actionList of this._actions) {
-            for (const action of actionList) {
-                builder.addAll(action.collectTranslationKeys());
-            }
+            builder.addAll(actionList.collectTranslationKeys());
         }
         return builder.get();
     }
@@ -554,7 +539,7 @@ export class EALoop extends EventAction {
     constructor(private _stopCondition: EventCondition | null,
                 private _maxIterations: number,
                 private _checkStopConditionAtEnd: boolean,
-                private _actions: EventAction[]) {
+                private _actions: EventActionList) {
         super();
     }
 
@@ -617,16 +602,18 @@ export class EALoop extends EventAction {
         if (!Array.isArray(obj['actions'])) {
             throw new Error('Missing actions.');
         }
+        const actions = context.actionFactory.fromJSONArray(obj['actions']);
         return new EALoop(stopCondition, maxIterations, checkStopConditionAtEnd,
-                          context.actionFactory.fromJSONArray(obj['actions']));
+                          new EventActionList(actions));
     }
     
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         let i = 0;
         if (this._checkStopConditionAtEnd) {
             do {
-                for (let action of this._actions) {
-                    await action.execute(context);
+                const result = await this._actions.execute(context);
+                if (result === EventActionResult.StopExecutionGlobally) {
+                    return EventActionResult.StopExecutionGlobally;
                 }
                 if (this._maxIterations > 0) {
                     i++;
@@ -637,8 +624,9 @@ export class EALoop extends EventAction {
         } else {
             while (this._stopCondition === null ||
                    this._stopCondition.check(context)) {
-                for (let action of this._actions) {
-                    await action.execute(context);
+                const result = await this._actions.execute(context);
+                if (result === EventActionResult.StopExecutionGlobally) {
+                    return EventActionResult.StopExecutionGlobally;
                 }
                 if (this._maxIterations > 0) {
                     i++;
@@ -646,13 +634,12 @@ export class EALoop extends EventAction {
                 }
             }
         }
+        return EventActionResult.Ok;
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
-        for (let action of this._actions) {
-            builder.addAll(action.collectTranslationKeys());
-        }
+        builder.addAll(this._actions.collectTranslationKeys());
         return builder.get();
     }
 
@@ -694,10 +681,11 @@ export class EAUpdateVariable extends EventAction {
                                     context.expressionCompiler.compile(expr));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         context.variableStore.setVar(this._varName,
                                  context.evaluator.eval(this._updateExpr),
                                  false);
+        return EventActionResult.Ok;
     }
 
 }
@@ -740,13 +728,14 @@ export class EAUpdateVariables extends EventAction {
         return new EAUpdateVariables(varNames, exprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (let i = 0;i < this._varNames.length;i++) {
             context.variableStore.setVar(
                 this._varNames[i],
                 context.evaluator.eval(this._updateExprs[i])
             );
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -793,11 +782,12 @@ export class EAUpdateVariableLimits extends EventAction {
         return new EAUpdateVariableLimits(limitsByVarName);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (const varName in this._limitsByVarName) {
             const limits = this._limitsByVarName[varName];
             context.variableStore.setVarLimits(varName, limits[0], limits[1]);
         }
+        return EventActionResult.Ok;
     }
 }
 
@@ -837,13 +827,14 @@ export class EAGiveItem extends EventAction {
             obj['itemId'], context.expressionCompiler.compile(obj['amount']));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         let amount = context.evaluator.eval(this._amountExpr);
         if (amount > 0) {
             context.inventory.add(this._itemId, amount);
         } else if (amount < 0) {
             context.inventory.remove(this._itemId, -amount);
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -889,7 +880,7 @@ export class EAUpdateItemAmounts extends EventAction {
         return new EAUpdateItemAmounts(itemIds, updateExprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (let i = 0;i < this._itemIds.length;i++) {
             const itemId = this._itemIds[i];
             const amount = context.evaluator.eval(this._updateExprs[i]);
@@ -899,6 +890,7 @@ export class EAUpdateItemAmounts extends EventAction {
                 context.inventory.remove(itemId, -amount);
             }
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -947,11 +939,12 @@ export class EAEndGame extends EventAction {
                              obj['fx']);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         await context.actionProxy.displayMessage(this._message, this._confirm,
                                                  '', this._fx);
         context.setEndGameState(
             this._winning ? EndGameState.Win : EndGameState.Loss);
+        return EventActionResult.StopExecutionGlobally;
     }
 
     collectTranslationKeys(): Set<string> {
@@ -994,12 +987,13 @@ export class EASetStatus extends EventAction {
         return new EASetStatus(obj['statusId'], obj['on']);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         if (this._on) {
             context.statusTable.add(this._statusId);
         } else {
             context.statusTable.remove(this._statusId);
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -1108,7 +1102,7 @@ export class EATriggerEvents extends EventAction {
         return new EATriggerEvents(triggerInfoList);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (const trigger of this._triggerInfoList) {
             const probability = trigger.probability == undefined
                 ? 1.0
@@ -1116,6 +1110,7 @@ export class EATriggerEvents extends EventAction {
             context.eventEngine.trigger(trigger.id, probability,
                                         trigger.priority);
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -1158,10 +1153,11 @@ export class EAEnableEvents extends EventAction {
         return new EAEnableEvents(eventIds);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (const eventId of this._eventIds) {
             context.eventEngine.enableEvent(eventId);
         }
+        return EventActionResult.Ok;
     }
 
 }
@@ -1203,10 +1199,11 @@ export class EADisableEvents extends EventAction {
         return new EADisableEvents(eventIds);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         for (const eventId of this._eventIds) {
             context.eventEngine.disableEvent(eventId);
         }
+        return EventActionResult.Ok;
     }
 
 }

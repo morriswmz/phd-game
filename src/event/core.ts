@@ -63,8 +63,25 @@ export interface EventActionExecutionContext extends EventConditionEvaluationCon
     readonly statusTable: StatusTable;
     readonly eventEngine: GameEventEngine;
     readonly actionProxy: GuiActionProxy;
-    getEndGameState(): EndGameState;
     setEndGameState(state: EndGameState): void;
+}
+
+export enum EventActionResult {
+    /**
+     * Indicates the execution of EventActions should continue normally.
+     */
+    Ok,
+    /**
+     * Execution of further EventActions in the current action list should be
+     * aborted. The remaining EventActions in the current GameEvent but not in
+     * the current action list may still run.
+     */
+    StopExecutionLocally,
+    /**
+     * Execution of all further EventActions in the current GameEvent should
+     * be aborted.
+     */
+    StopExecutionGlobally,
 }
 
 const EMPTY_TRANSLATION_KEYS: ReadonlySet<string> = new Set();
@@ -76,7 +93,7 @@ const EMPTY_TRANSLATION_KEYS: ReadonlySet<string> = new Set();
  */
 export abstract class EventAction {
 
-    async execute(context: EventActionExecutionContext): Promise<void> {
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
         throw new Error('Not implemented.');
     }
 
@@ -88,6 +105,42 @@ export abstract class EventAction {
 }
 
 /**
+ * Helper class to manage the execution of a fixed list of actions.
+ */
+export class EventActionList {
+
+    constructor(private _actions: ReadonlyArray<EventAction>) {}
+
+    get actions(): ReadonlyArray<EventAction> {
+        return this._actions;
+    }
+
+    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+        for (let action of this._actions) {
+            const result = await action.execute(context);
+            if (result !== EventActionResult.Ok) {
+                return result === EventActionResult.StopExecutionLocally
+                    ? EventActionResult.Ok
+                    : EventActionResult.StopExecutionGlobally;
+            }
+        }
+        return EventActionResult.Ok;
+    }
+
+    // Collects all translation keys defined from the EventActions in this list.
+    collectTranslationKeys(): ReadonlySet<string> {
+        const builder = new SetBuilder<string>();
+        for (let action of this._actions) {
+            builder.addAll(action.collectTranslationKeys());
+        }
+        return builder.get();
+    }
+
+}
+
+const EMPTY_EVENT_ACTION_LIST = new EventActionList([]);
+
+/**
  * Represents a game event.
  * The implementation should be stateless and only contain necessary
  * definitions.
@@ -96,7 +149,7 @@ export class GameEvent {
     
     constructor(private _id: string, private _trigger: string,
                 private _conditions: EventCondition[] = [],
-                private _actions: EventAction[] = [],
+                private _actions: EventActionList = EMPTY_EVENT_ACTION_LIST,
                 private _probability: number | CompiledEventExpression = 1.0,
                 private _exclusions: string[] = [],
                 private _once: boolean = false,
@@ -124,7 +177,7 @@ export class GameEvent {
     /**
      * Actions for this event.
      */
-    get actions(): EventAction[] {
+    get actions(): EventActionList {
         return this._actions;
     }
     /**
@@ -158,11 +211,7 @@ export class GameEvent {
      * Collects translation keys from all event actions
      */
     collectTranslationKeys(): ReadonlySet<string> {
-        const builder = new SetBuilder<string>();
-        this._actions.forEach((a) => {
-            builder.addAll(a.collectTranslationKeys());
-        });
-        return builder.get();
+        return this._actions.collectTranslationKeys();
     }
 }
 

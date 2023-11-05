@@ -109,6 +109,7 @@ export class PriorityQueue<T> {
     while (i < this._data.length) {
       const right = (i + 1) << 1;
       const left = right - 1;
+      if (left >= this._data.length) break;
       if (right >= this._data.length) {
         if (this._comparator(this._data[i], this._data[left])) {
           this._swap(i, left);

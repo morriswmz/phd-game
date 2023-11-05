@@ -60,6 +60,7 @@ export class SimpleGameTextEngine implements GameTextEngine {
                 // Variables in VariableStore
                 let val = this._variableStore.getVar(p1, false);
                 if (val == undefined) {
+                    console.log('Undefined variable ' + p1);
                     return match;
                 }
                 if (p2 == undefined) {

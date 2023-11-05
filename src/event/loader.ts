@@ -1,6 +1,6 @@
 import { EventConditionFactory } from './conditions';
 import { EventActionFactory } from './actions';
-import { GameEvent } from './core';
+import { EventActionList, GameEvent } from './core';
 import { downloadAndParse } from '../utils/network';
 import { load as loadYaml } from 'js-yaml';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
@@ -72,7 +72,9 @@ export class GameEventLoader {
         }
         const exclusions = Array.isArray(obj['exclusions']) ? obj['exclusions'] : [];
         if (!Array.isArray(obj['actions'])) throw new Error('Missing actions.');
-        const actions = obj['actions'].map((item: any) => this._actionFactory.fromJSONObject(item));
+        const actions = new EventActionList(obj['actions'].map((item: any) => {
+            return this._actionFactory.fromJSONObject(item);
+        }));
         const once = !!obj['once'];
         const disabledByDefault = !!obj['disabled'];
         return new GameEvent(id, trigger, conditions, actions, probability,
