@@ -1,6 +1,7 @@
 import { EffectProvider, EffectCollection, EffectProviderCollection, EffectProviderRegistry, loadEffectCollectionFromJSON, EffectProviderCollectionChangedEvent } from './effect';
 import { load as loadYaml } from 'js-yaml';
 import { downloadAndParse } from '../utils/network';
+import { JsonEncodable, JsonValue } from '../utils/json';
 
 export class Status implements EffectProvider {
 
@@ -65,7 +66,7 @@ export class StatusRegistry extends EffectProviderRegistry<Status> {
 
 }
 
-export class StatusTable extends EffectProviderCollection<Status> {
+export class StatusTable extends EffectProviderCollection<Status> implements JsonEncodable {
     
     // Note: count is always one for the moment. If we want different levels of
     // status, we may utilize the count value in the future.
@@ -122,6 +123,43 @@ export class StatusTable extends EffectProviderCollection<Status> {
         for (let id of pending) {
             this.remove(id);
         }
+    }
+
+    decodeFromJson(json: JsonValue): void {
+        if (json === null || !Array.isArray(json)) {
+            throw new Error('Array expected.');
+        }
+        this.clear();
+        for (const statusData of json) {
+            if (!Array.isArray(statusData) || statusData.length !== 2 ||
+                typeof statusData[0] !== 'string' ||
+                typeof statusData[1] !== 'number') {
+                throw new Error('Each saved status data should be a two-element tuple of the status id string and the duration remaining.');
+            }
+            const [statusId, durationLeft] = statusData;
+            this.add(statusId);
+            this._remainingTicks[statusId] =
+                durationLeft < 0 ? Infinity : durationLeft;
+        }
+    }
+
+    /**
+     * Encoding format for status:
+     * ```
+     * [
+     *     ["statusId1": $durationLeft1],
+     *     ["statusId2": $durationLeft2],
+     * ]
+     * We use -1 to indicate infinite duration.
+     * ```
+     */
+    encodeAsJson(): JsonValue {
+        let json = new Array<[string, number]>();
+        for (const statusId in this._items) {
+            const duration = this._remainingTicks[statusId];
+            json.push([statusId, isFinite(duration) ? duration : -1])
+        }
+        return json;
     }
 
 }

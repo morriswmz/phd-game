@@ -1,3 +1,31 @@
+import { JsonObject, JsonEncodable, JsonValue } from "./utils/json";
+
+type EncodedNumber = number | 'NaN' | 'Infinity' | '-Infinity';
+
+function isEncodedNumber(x: any): x is EncodedNumber {
+    if (typeof x === 'number') return true;
+    if (typeof x === 'string') {
+        return x === 'NaN' || x === 'Infinity' || x === '-Infinity';
+    }
+    return false;
+}
+
+function encodeNumber(x: number): EncodedNumber {
+    if (isNaN(x)) return 'NaN';
+    if (!isFinite(x)) return x > 0 ? "Infinity" : "-Infinity";
+    return x;
+}
+
+function decodeNumber(x: EncodedNumber) : number {
+    if (typeof x === 'string') {
+        if (x === 'NaN') return NaN;
+        if (x === 'Infinity') return Infinity;
+        if (x === '-Infinity') return -Infinity;
+        throw new Error('Unable to decode ' + x);
+    }
+    return x;
+}
+
 export class VariableChangedEvent {
 
     // Indicates whether all variables are cleared.
@@ -17,7 +45,7 @@ export class VariableChangedEvent {
 
 type VariableChangeHandler = (sender: VariableStore, event: VariableChangedEvent) => void;
 
-export class VariableStore {
+export class VariableStore implements JsonEncodable {
 
     private _variables: Record<string, number> = {};
     private _varLimits: Record<string, [number, number]> = {};
@@ -124,6 +152,64 @@ export class VariableStore {
             lines.push(`${varName}: ${this._variables[varName]}${limitsStr}`);
         }
         console.log(lines.join('\n'));
+    }
+
+    decodeFromJson(json: JsonValue): void {
+        if (json === null || typeof json !== 'object' || Array.isArray(json)) {
+            throw new Error('Non-null JSON object expected.');
+        }
+        this.reset();
+        for (const varName in json) {
+            const varValue = json[varName];
+            if (isEncodedNumber(varValue)) {
+                this.setVar(varName, decodeNumber(varValue));
+            } else if (Array.isArray(varValue)) {
+                if (varValue.length !== 3) {
+                    throw new Error('Expect 3 elements: value, lower bound, upper bound.');
+                }
+                const [value, lb, ub] = varValue;
+                if (!isEncodedNumber(value)) {
+                    throw new Error('Invalid variable value.');
+                }
+                if (!isEncodedNumber(lb)) {
+                    throw new Error('Invalid variable lower bound.');
+                }
+                if (!isEncodedNumber(ub)) {
+                    throw new Error('Invalid variable upper bound.');
+                }
+                this.setVar(varName, decodeNumber(value));
+                this.setVarLimits(varName, decodeNumber(lb), decodeNumber(ub));
+            }
+        }
+    }
+
+    /**
+     * Encoding format:
+     * ```
+     * {
+     *     // With limits
+     *     "varName1": [$value1, $loweBound1, $upperBound1],
+     *     // Without limits
+     *     "varName2": $value2,
+     *     ...
+     * }
+     * ```
+     * Infinity, -Infinity, and NaN values are encoded as strings.
+     */
+    encodeAsJson(): JsonValue {
+        let json: JsonObject = {};
+        for (const varName in this._variables) {
+            const varValue: number = this._variables[varName];
+            if (varName in this._varLimits) {
+                const [lb, ub] = this._varLimits[varName];
+                json[varName] = [
+                    encodeNumber(varValue), encodeNumber(lb), encodeNumber(ub)
+                ];
+            } else {
+                json[varName] = encodeNumber(varValue);
+            }
+        }
+        return json;
     }
 
     protected dispatchChangeEvent(event: VariableChangedEvent) {

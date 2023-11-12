@@ -1,6 +1,7 @@
 import { EffectProvider, EffectProviderCollection, Modifier, EffectProviderRegistry, EffectCollection, loadEffectCollectionFromJSON } from './effect';
 import { downloadAndParse } from '../utils/network';
 import { load as loadYaml } from 'js-yaml';
+import { JsonEncodable, JsonValue } from '../utils/json';
 
 export class Item implements EffectProvider {
 
@@ -65,6 +66,39 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
 
 }
 
-export class Inventory extends EffectProviderCollection<Item> {
+export class Inventory extends EffectProviderCollection<Item> implements JsonEncodable {
     
+    decodeFromJson(json: JsonValue): void {
+        if (json === null || !Array.isArray(json)) {
+            throw new Error('Array expected.');
+        }
+        this.clear();
+        for (const itemData of json) {
+            if (!Array.isArray(itemData) || itemData.length !== 2 ||
+                typeof itemData[0] !== 'string' ||
+                typeof itemData[1] !== 'number') {
+                throw new Error('Each saved item data should be a two-element tuple of the item id string and the amount number.');
+            }
+            this.add(itemData[0], itemData[1]);
+        }
+    }
+
+    /**
+     * Encoding format for inventory items:
+     * ```
+     * [
+     *     ["itemId1": $amount1],
+     *     ["itemId1": $amount1],
+     *     ...
+     * ]
+     * ```
+     */
+    encodeAsJson(): JsonValue {
+        let json = new Array<[string, number]>();
+        for (const itemId in this._items) {
+            json.push([itemId, this._items[itemId][1]]);
+        }
+        return json;
+    }
+
 }
