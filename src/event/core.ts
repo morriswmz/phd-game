@@ -88,14 +88,16 @@ const EMPTY_TRANSLATION_KEYS: ReadonlySet<string> = new Set();
 
 /**
  * Represents an action.
- * The implementation should be stateless and only storing necessary
- * definitions.
  */
 export abstract class EventAction {
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        throw new Error('Not implemented.');
-    }
+    /**
+     * Execute the action in the given `context`. Execution can be either
+     * synchronous or asynchronous. A promise should be returned in case of 
+     * asynchronous executions.
+     * Note: Should not be called while this event action is already executing.
+     */
+    abstract execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult>;
 
     // Collects all translation keys defined in this event action as a set.
     collectTranslationKeys(): ReadonlySet<string> {
@@ -109,22 +111,17 @@ export abstract class EventAction {
  */
 export class EventActionList {
 
-    constructor(private _actions: ReadonlyArray<EventAction>) {}
+    constructor(private _actions: ReadonlyArray<EventAction>,
+                private _nextIndex: number = -1) {}
 
     get actions(): ReadonlyArray<EventAction> {
         return this._actions;
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        for (let action of this._actions) {
-            const result = await action.execute(context);
-            if (result !== EventActionResult.Ok) {
-                return result === EventActionResult.StopExecutionLocally
-                    ? EventActionResult.Ok
-                    : EventActionResult.StopExecutionGlobally;
-            }
-        }
-        return EventActionResult.Ok;
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        if (this._nextIndex >= 0) throw new Error('Already executing.'); 
+        this._nextIndex = 0;
+        return this._executeNext(context);
     }
 
     // Collects all translation keys defined from the EventActions in this list.
@@ -134,6 +131,34 @@ export class EventActionList {
             builder.addAll(action.collectTranslationKeys());
         }
         return builder.get();
+    }
+
+    private _executeNext(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        while (this._nextIndex >= 0 && this._nextIndex < this._actions.length) {
+            const action = this._actions[this._nextIndex];
+            ++this._nextIndex;
+            const result = action.execute(context);
+            if (typeof result === 'number') {
+                if (result !== EventActionResult.Ok) {
+                    this._nextIndex = -1;
+                    return result === EventActionResult.StopExecutionLocally
+                        ? EventActionResult.Ok
+                        : EventActionResult.StopExecutionGlobally;
+                }
+            } else {
+                return result.then((futureResult) => {
+                    if (futureResult === EventActionResult.Ok) {
+                        return this._executeNext(context);
+                    }
+                    this._nextIndex = -1;
+                    return futureResult === EventActionResult.StopExecutionLocally
+                        ? EventActionResult.Ok
+                        : EventActionResult.StopExecutionGlobally;
+                });
+            }
+        }
+        this._nextIndex = -1;
+        return EventActionResult.Ok;
     }
 
 }

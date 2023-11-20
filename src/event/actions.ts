@@ -99,7 +99,7 @@ export class EALog extends EventAction {
         return new EALog(obj['message'], obj['dumpVariables'] || false);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         console.log(this._message);
         if (this._dumpVariables) {
             context.variableStore.dumpToConsole();
@@ -143,11 +143,11 @@ export class EADisplayMessage extends EventAction {
                                     obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        await context.actionProxy.displayMessage(this._message,
-                                                 this._confirm,
-                                                 this._icon);
-        return EventActionResult.Ok;
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        return context.actionProxy.displayMessage(this._message,
+                                                  this._confirm,
+                                                  this._icon)
+            .then(() => EventActionResult.Ok);
     }
 
     collectTranslationKeys(): Set<string> {
@@ -192,12 +192,12 @@ export class EADisplayRandomMessage extends EventAction {
                                           obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         const msgId = Math.floor(context.random.next() * this._messages.length);
-        await context.actionProxy.displayMessage(this._messages[msgId],
-                                                 this._confirm,
-                                                 this._icon);
-        return EventActionResult.Ok;
+        return context.actionProxy.displayMessage(this._messages[msgId],
+                                                  this._confirm,
+                                                  this._icon)
+            .then(() => EventActionResult.Ok);
     }
 
     collectTranslationKeys(): Set<string> {
@@ -275,7 +275,7 @@ export class EADisplayChoices extends EventAction {
                                     requirements, actions, obj['icon'] || '');
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         // Build choice array according to requirements.
         let choices: Array<[string, number]> = [];
         for (let i = 0;i < this._choiceMessages.length;i++) {
@@ -283,11 +283,10 @@ export class EADisplayChoices extends EventAction {
                 choices.push([this._choiceMessages[i], i]);
             }
         }
-        let choiceId = await context.actionProxy.displayChoices(this._message,
-                                                                choices,
-                                                                this._icon);
-        let actions = this._actions[choiceId];
-        return actions.execute(context);
+        return context.actionProxy.displayChoices(this._message,
+                                                  choices,
+                                                  this._icon)
+            .then((choiceId) => this._actions[choiceId].execute(context));
     }
 
     collectTranslationKeys(): Set<string> {
@@ -365,11 +364,8 @@ export class EARandom extends EventAction {
         return new EARandom(actions, weightExprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        let idx = weightedSample(
-            this._weightExprs.map(item => context.evaluator.eval(item)),
-            () => context.random.next());
-        return this._actions[idx].execute(context);
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        return this._actions[this._randomIndex(context)].execute(context);
     }
 
     collectTranslationKeys(): Set<string> {
@@ -378,6 +374,12 @@ export class EARandom extends EventAction {
             builder.addAll(actionList.collectTranslationKeys());
         }
         return builder.get();
+    }
+
+    private _randomIndex(context: EventActionExecutionContext): number {
+        return weightedSample(
+            this._weightExprs.map(item => context.evaluator.eval(item)),
+            () => context.random.next());
     }
 
 }
@@ -429,11 +431,8 @@ export class EACoinFlip extends EventAction {
                               new EventActionList(failActions));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        let p = context.evaluator.eval(this._p);
-        if (p < 0) p = 0;
-        let coinFlip = context.random.next();
-        if (coinFlip < p) {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        if (this._coinFlip(context)) {
             return this._successActionList.execute(context);
         } else {
             return this._failActionList.execute(context);
@@ -445,6 +444,12 @@ export class EACoinFlip extends EventAction {
         builder.addAll(this._successActionList.collectTranslationKeys());
         builder.addAll(this._failActionList.collectTranslationKeys());
         return builder.get();
+    }
+
+    private _coinFlip(context: EventActionExecutionContext): boolean {
+        const p = context.evaluator.eval(this._p);
+        if (p < 0) return false;
+        return context.random.next() < p;
     }
 
 }
@@ -510,7 +515,7 @@ export class EASwitch extends EventAction {
         return new EASwitch(conditions, actions);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         // Check operation
         for (let i = 0; i < this._conditions.length; i++) {
             if (this._conditions[i].check(context)) {
@@ -535,6 +540,8 @@ export class EASwitch extends EventAction {
  * loop in JavaScript.
  */
 export class EALoop extends EventAction {
+
+    private _i: number = -1;
 
     constructor(private _stopCondition: EventCondition | null,
                 private _maxIterations: number,
@@ -606,41 +613,93 @@ export class EALoop extends EventAction {
         return new EALoop(stopCondition, maxIterations, checkStopConditionAtEnd,
                           new EventActionList(actions));
     }
-    
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        let i = 0;
-        if (this._checkStopConditionAtEnd) {
-            do {
-                const result = await this._actions.execute(context);
-                if (result === EventActionResult.StopExecutionGlobally) {
-                    return EventActionResult.StopExecutionGlobally;
-                }
-                if (this._maxIterations > 0) {
-                    i++;
-                    if (i >= this._maxIterations) break;
-                }
-            } while (this._stopCondition === null ||
-                     this._stopCondition.check(context));
-        } else {
-            while (this._stopCondition === null ||
-                   this._stopCondition.check(context)) {
-                const result = await this._actions.execute(context);
-                if (result === EventActionResult.StopExecutionGlobally) {
-                    return EventActionResult.StopExecutionGlobally;
-                }
-                if (this._maxIterations > 0) {
-                    i++;
-                    if (i >= this._maxIterations) break;
-                }
-            }
-        }
-        return EventActionResult.Ok;
+
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        if (this._i >= 0) throw new Error('Already executing.');
+        this._i = 0;
+        return this._checkStopConditionAtEnd
+            ? this._nextDoWhileIteration(context)
+            : this._nextWhileDoIteration(context);
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
         builder.addAll(this._actions.collectTranslationKeys());
         return builder.get();
+    }
+
+    private _nextDoWhileIteration(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        do {
+            const result = this._actions.execute(context);
+            if (typeof result === 'number') {
+                if (result === EventActionResult.StopExecutionGlobally) {
+                    this._i = -1;
+                    return EventActionResult.StopExecutionGlobally;
+                }
+                if (this._maxIterations > 0 &&
+                    ++this._i >= this._maxIterations) {
+                    this._i = -1;
+                    break;
+                }
+            } else {
+                return result.then((futureResult) => {
+                    if (futureResult === EventActionResult.StopExecutionGlobally) {
+                        this._i = -1;
+                        return EventActionResult.StopExecutionGlobally;
+                    } else {
+                        if (this._maxIterations > 0 &&
+                            ++this._i >= this._maxIterations) {
+                            this._i = -1;
+                            return EventActionResult.Ok;
+                        }
+                        if (this._stopCondition === null ||
+                            !this._stopCondition.check(context)) {
+                            return this._nextDoWhileIteration(context);
+                        } else {
+                            this._i = -1;
+                            return EventActionResult.Ok;
+                        }
+                    }
+                });
+            }
+        } while (this._stopCondition === null ||
+                 !this._stopCondition.check(context));
+        this._i = -1;
+        return EventActionResult.Ok;
+    }
+
+    private _nextWhileDoIteration(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        while (this._stopCondition === null ||
+               !this._stopCondition.check(context)) {
+            const result = this._actions.execute(context);
+            if (typeof result === 'number') {
+                if (result === EventActionResult.StopExecutionGlobally) {
+                    this._i = -1;
+                    return EventActionResult.StopExecutionGlobally;
+                }
+                if (this._maxIterations > 0 &&
+                    ++this._i >= this._maxIterations) {
+                    this._i = -1;
+                    break;
+                }
+            } else {
+                return result.then((futureResult) => {
+                    if (futureResult === EventActionResult.StopExecutionGlobally) {
+                        this._i = -1;
+                        return EventActionResult.StopExecutionGlobally;
+                    } else {
+                        if (this._maxIterations > 0 &&
+                            ++this._i >= this._maxIterations) {
+                            this._i = -1;
+                            return EventActionResult.Ok;
+                        }
+                        return this._nextWhileDoIteration(context);
+                    }
+                });
+            }
+        }
+        this._i = -1;
+        return EventActionResult.Ok;
     }
 
 }
@@ -681,10 +740,10 @@ export class EAUpdateVariable extends EventAction {
                                     context.expressionCompiler.compile(expr));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         context.variableStore.setVar(this._varName,
-                                 context.evaluator.eval(this._updateExpr),
-                                 false);
+                                     context.evaluator.eval(this._updateExpr),
+                                     false);
         return EventActionResult.Ok;
     }
 
@@ -728,7 +787,7 @@ export class EAUpdateVariables extends EventAction {
         return new EAUpdateVariables(varNames, exprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (let i = 0;i < this._varNames.length;i++) {
             context.variableStore.setVar(
                 this._varNames[i],
@@ -782,7 +841,7 @@ export class EAUpdateVariableLimits extends EventAction {
         return new EAUpdateVariableLimits(limitsByVarName);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (const varName in this._limitsByVarName) {
             const limits = this._limitsByVarName[varName];
             context.variableStore.setVarLimits(varName, limits[0], limits[1]);
@@ -827,7 +886,7 @@ export class EAGiveItem extends EventAction {
             obj['itemId'], context.expressionCompiler.compile(obj['amount']));
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         let amount = context.evaluator.eval(this._amountExpr);
         if (amount > 0) {
             context.inventory.add(this._itemId, amount);
@@ -880,7 +939,7 @@ export class EAUpdateItemAmounts extends EventAction {
         return new EAUpdateItemAmounts(itemIds, updateExprs);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (let i = 0;i < this._itemIds.length;i++) {
             const itemId = this._itemIds[i];
             const amount = context.evaluator.eval(this._updateExprs[i]);
@@ -939,12 +998,14 @@ export class EAEndGame extends EventAction {
                              obj['fx']);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
-        await context.actionProxy.displayMessage(this._message, this._confirm,
-                                                 '', this._fx);
-        context.setEndGameState(
-            this._winning ? EndGameState.Win : EndGameState.Loss);
-        return EventActionResult.StopExecutionGlobally;
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
+        return context.actionProxy.displayMessage(this._message, this._confirm,
+                                                  '', this._fx)
+            .then(() => {
+                context.setEndGameState(
+                    this._winning ? EndGameState.Win : EndGameState.Loss);
+                return EventActionResult.StopExecutionGlobally;
+            });
     }
 
     collectTranslationKeys(): Set<string> {
@@ -987,7 +1048,7 @@ export class EASetStatus extends EventAction {
         return new EASetStatus(obj['statusId'], obj['on']);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         if (this._on) {
             context.statusTable.add(this._statusId);
         } else {
@@ -1102,7 +1163,7 @@ export class EATriggerEvents extends EventAction {
         return new EATriggerEvents(triggerInfoList);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (const trigger of this._triggerInfoList) {
             const probability = trigger.probability == undefined
                 ? 1.0
@@ -1153,7 +1214,7 @@ export class EAEnableEvents extends EventAction {
         return new EAEnableEvents(eventIds);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (const eventId of this._eventIds) {
             context.eventEngine.enableEvent(eventId);
         }
@@ -1199,7 +1260,7 @@ export class EADisableEvents extends EventAction {
         return new EADisableEvents(eventIds);
     }
 
-    async execute(context: EventActionExecutionContext): Promise<EventActionResult> {
+    execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         for (const eventId of this._eventIds) {
             context.eventEngine.disableEvent(eventId);
         }
