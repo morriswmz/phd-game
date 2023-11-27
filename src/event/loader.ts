@@ -38,7 +38,7 @@ export class GameEventLoader {
      *  {
      *      id: string,
      *      trigger: string | undefined, // undefined means never triggered.
-     *      conditions: EventCondition[] | undefined,
+     *      conditions: Array<EventCondition | string | number> | undefined,
      *      probability: number | string | undefined,
      *      once: boolean | undefined,
      *      disabled: boolean | undefined,
@@ -56,7 +56,7 @@ export class GameEventLoader {
         }
         const trigger = obj['trigger'] || '';
         const conditions = Array.isArray(obj['conditions'])
-            ? obj['conditions'].map((item: any) => this._conditionFactory.fromJSONObject(item))
+            ? obj['conditions'].map((item: any) => this._conditionFactory.fromJSON(item))
             : [];
         let probability: number | CompiledEventExpression;
         if (obj['probability'] == undefined) {

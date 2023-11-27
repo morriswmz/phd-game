@@ -499,13 +499,7 @@ export class EASwitch extends EventAction {
             if (branch['condition'] == undefined) {
                 throw new Error('Condition is required.');
             }
-            let cond = branch['condition'];
-            if (typeof cond === 'string' || typeof cond === 'number') {
-                conditions.push(
-                    new ECExpression(context.expressionCompiler.compile(cond)));
-            } else {
-                conditions.push(context.conditionFactory.fromJSONObject(cond));
-            }
+            conditions.push(context.conditionFactory.fromJSON(branch['condition']));
             if (!Array.isArray(branch['actions'])) {
                 throw new Error('Missing actions.');
             }
@@ -583,14 +577,7 @@ export class EALoop extends EventAction {
         let stopCondition: EventCondition | null = null;
         const stopConditionDef = obj['stopCondition'];
         if (stopConditionDef != undefined) {
-            if (typeof stopConditionDef === 'string' ||
-                typeof stopConditionDef === 'number') {
-                stopCondition = new ECExpression(
-                    context.expressionCompiler.compile(stopConditionDef));
-            } else {
-                stopCondition = context.conditionFactory
-                    .fromJSONObject(stopConditionDef);
-            }
+            stopCondition = context.conditionFactory.fromJSON(stopConditionDef);
         }
         let maxIterations = obj['maxIterations'];
         if (maxIterations == undefined) {
