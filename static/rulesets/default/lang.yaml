@@ -20,9 +20,9 @@ item.idea.description: A simple idea to be developed to a preliminary result.
 item.preliminaryResult: Preliminary Result
 item.preliminaryResult.description: Some preliminary findings. Can be potentially developed into a major result.
 item.majorResult: Major Result
-item.majorResult.description: Some major findings. With three figures, you can draft a new paper.
+item.majorResult.description: Some major findings. With {{rule.figuresRequired}} figures, you can draft a new paper.
 item.figure: Figure
-item.figure.description: A nice looking figure summarizing your hard work conducting various experiments. With three figures and a major result, you can draft a paper.
+item.figure.description: A nice looking figure summarizing your hard work conducting various experiments. With {{rule.figuresRequired}} figures and a major result, you can draft a paper.
 item.submittedPaper: Submitted Paper
 item.submittedPaper.description: A submitted paper, waiting for the judgement from the reviewers.
 item.resubmittedPaper: Resubmitted Paper
@@ -82,7 +82,7 @@ message.advisorHappyAgain: Your advisor seemed to be quite satisfied with your r
 # main events
 message.beginning: Congratulations. You have been **admitted** as a new PhD student here. Will you accept the offer?
 message.acceptOffer: Accept the offer.
-message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **3 journal papers** to qualify for your degree.
+message.acceptedOffer: You accepted the offer and found your advisor. You are required to publish at least **{{rule.papersRequired}} journal papers** to qualify for your degree.
 message.declineOffer: Decline the offer.
 message.declinedOffer: You changed your mind and **declined the offer**. Perhaps it is a better choice in this timeline.
 message.newMonth: A new month begins. Let us check the to-do list.
