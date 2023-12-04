@@ -10,9 +10,11 @@ import { GameEventLoader } from './event/loader';
 import { StatusRegistry, StatusTable } from './effect/status';
 import { AleaRandomSource, RandomSource } from './utils/random';
 import { EndGameState } from './endGameState';
+import { AttributeRegistry } from './effect/attribute';
 
 export interface GameConfig {
     initialRandomSeed?: string;
+    attributeDefinitionUrl?: string;
     itemDefinitionUrl?: string;
     statusDefinitionUrl?: string;
     eventDefinitionUrl?: string;
@@ -29,6 +31,7 @@ export class GameEngine {
 
     private _config: GameConfig;
     private _actionProxy: GuiActionProxy;
+    private _attributeRegistry: AttributeRegistry;
     private _itemRegistry: ItemRegistry;
     private _statusRegistry: StatusRegistry;
     private _inventory: Inventory;
@@ -48,8 +51,9 @@ export class GameEngine {
         // Copy the configuration.
         this._config = Object.assign({}, config);
         this._actionProxy = ap;
-        this._itemRegistry = new ItemRegistry();
-        this._statusRegistry = new StatusRegistry();
+        this._attributeRegistry = new AttributeRegistry();
+        this._itemRegistry = new ItemRegistry(this._attributeRegistry);
+        this._statusRegistry = new StatusRegistry(this._attributeRegistry);
         this._inventory = new Inventory(this._itemRegistry);
         this._statusTable = new StatusTable(this._statusRegistry);
         this._variableStore = new VariableStore();
@@ -61,8 +65,8 @@ export class GameEngine {
         );
         this._eventEngine = new GameEventEngine();
         this._expressionEngine = new EventExpressionEngine(
-            this._variableStore, this._inventory, this._statusTable,
-            this._random, this._eventEngine);
+            this._variableStore, this._attributeRegistry, this._inventory,
+            this._statusTable, this._random, this._eventEngine);
         this._conditionFactory = 
             new EventConditionFactory(this._expressionEngine);
         this._actionFactory = new EventActionFactory(this._conditionFactory,
@@ -91,6 +95,13 @@ export class GameEngine {
      */
     get random(): RandomSource {
         return this._random;
+    }
+    
+    /**
+     * Retrieves the attribute registry.
+     */
+    get attributeRegistry(): AttributeRegistry {
+        return this._attributeRegistry;
     }
 
     /**
@@ -148,6 +159,12 @@ export class GameEngine {
     async loadGameData(): Promise<void> {
         if (this._dataLoaded) return;
         this._initFactories();
+        if (this._config.attributeDefinitionUrl) {
+            await this._attributeRegistry.loadAttributes(
+                this._config.attributeDefinitionUrl);
+        } else {
+            console.warn('Missing attribute definitions. No attributes loaded.');
+        }
         if (this._config.itemDefinitionUrl) {
             await this._itemRegistry.loadItems(this._config.itemDefinitionUrl);
         } else {

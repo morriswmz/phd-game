@@ -74,7 +74,7 @@
   actions:
   - id: UpdateVariables
     updates:
-      player.hope: player.hope + calcEffectValue('player.hopeBoost', 0)
+      player.hope: player.hope + getAttributeValue('player.hopeBoost')
       player.monthSkipped: 0
 - id: LostAllHope
   trigger: MonthBegin
@@ -546,7 +546,7 @@
       actions:
       - id: Random
         groups:
-        - weight: 0.5 + calcEffectValue('player.experimentBoost', 0)
+        - weight: 0.5 + getAttributeValue('player.experimentBoost')
           actions:
           - id: DisplayMessage
             message: message.gainFigure
@@ -688,7 +688,7 @@
     expression: itemCount('submittedPaper') >= 1
   actions:
   - id: CoinFlip
-    probability: calcEffectValue('player.paperAcceptanceBoost', 0) + 0.25
+    probability: getAttributeValue('player.paperAcceptanceBoost') + 0.25
     success:
     - id: DisplayMessage
       message: message.paperAccepted
@@ -730,7 +730,7 @@
     expression: itemCount('resubmittedPaper') >= 1
   actions:
   - id: CoinFlip
-    probability: calcEffectValue('player.paperAcceptanceBoost', 0) + 0.6
+    probability: getAttributeValue('player.paperAcceptanceBoost') + 0.6
     success:
     - id: DisplayMessage
       message: message.resubmittedPaperAccepted

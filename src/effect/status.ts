@@ -1,16 +1,15 @@
-import { EffectProvider, EffectCollection, EffectProviderCollection, EffectProviderRegistry, loadEffectCollectionFromJSON, EffectProviderCollectionChangedEvent } from './effect';
+import { Effect, EffectProvider, EffectProviderCollection, loadEffectsFromObjectArray, EffectProviderCollectionChangedEvent } from './effect';
 import { load as loadYaml } from 'js-yaml';
 import { downloadAndParse } from '../utils/network';
 import { JsonEncodable, JsonValue } from '../utils/json';
+import { SimpleRegistry } from '../utils/simpleRegistry';
+import { AttributeRegistry } from './attribute';
 
 export class Status implements EffectProvider {
 
     constructor (private _id: string, private _duration: number,
                  private _icon: string = '',
-                 private _effects: EffectCollection = {})
-    {
-
-    }
+                 private _effects: Effect[] = []) {}
 
     get id(): string {
         return this._id;
@@ -32,14 +31,22 @@ export class Status implements EffectProvider {
         return this._duration;
     }
 
-    getEffects(): EffectCollection {
+    getEffects(): ReadonlyArray<Effect> {
         return this._effects;
     }
 
 }
 
-export class StatusRegistry extends EffectProviderRegistry<Status> {
-    
+export class StatusRegistry extends SimpleRegistry<Status> {
+
+    constructor(private _attributeRegistry: AttributeRegistry) {
+        super();
+    }
+
+    get name(): string {
+        return 'status';
+    }
+
     async loadStatus(url: string): Promise<void> {
         let obj: any = await downloadAndParse(url, loadYaml);
         if (!obj) return;
@@ -51,11 +58,12 @@ export class StatusRegistry extends EffectProviderRegistry<Status> {
             if (typeof statusDef['id'] !== 'string') {
                 throw new Error('Missing item id.');
             }
-            let effects: EffectCollection;
-            if (statusDef['effects'] != undefined) {
-                effects = loadEffectCollectionFromJSON(statusDef['effects']);
+            let effects: Effect[];
+            if (Array.isArray(statusDef['effects'])) {
+                effects = loadEffectsFromObjectArray(statusDef['effects'],
+                                                     this._attributeRegistry);
             } else {
-                effects = {};
+                effects = [];
             }
             let duration = typeof statusDef['duration'] === 'number' ? statusDef['duration'] : Infinity;
             let icon = typeof statusDef['icon'] === 'string' ? statusDef['icon'] : '';

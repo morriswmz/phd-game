@@ -4,6 +4,7 @@ import { EventOccurrenceTracker } from './core';
 import { RandomSource } from '../utils/random';
 import { Inventory } from '../effect/item';
 import { StatusTable } from '../effect/status';
+import { AttributeModifier, AttributeRegistry } from '../effect/attribute';
 
 export interface EventExpressionFunctionTable extends FunctionTable {
     // Math functions. 
@@ -44,9 +45,9 @@ export interface EventExpressionFunctionTable extends FunctionTable {
      */
     hasStatus(id: string): boolean;
     /**
-     * Calculates the effect value.
+     * Calculates the give attribute's value.
      */
-    calcEffectValue(id: string, base: number): number;
+    getAttributeValue(id: string): number;
 }
 
 export type CompiledEventExpression = CompiledExpression<EventExpressionFunctionTable>;
@@ -58,16 +59,18 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
 
     private _fTable: EventExpressionFunctionTable;
     private _variableStore: VariableStore;
+    private _attributes: AttributeRegistry;
     private _inventory: Inventory;
     private _statusTable: StatusTable;
     private _random: RandomSource
     private _eventOccurrenceTracker: EventOccurrenceTracker;
     private _cache: { [key: string]: CompiledEventExpression } = {};
 
-    constructor(variableStore: VariableStore, inventory: Inventory,
-                statusTable: StatusTable, random: RandomSource,
-                tracker: EventOccurrenceTracker) {
+    constructor(variableStore: VariableStore, attributes: AttributeRegistry,
+                inventory: Inventory, statusTable: StatusTable,
+                random: RandomSource, tracker: EventOccurrenceTracker) {
         this._variableStore = variableStore;
+        this._attributes = attributes;
         this._inventory = inventory;
         this._statusTable = statusTable;
         this._random = random;
@@ -84,10 +87,16 @@ export class EventExpressionEngine implements EventFunctionTableProvider, EventE
             lowerBound: varName => this._variableStore.getVarLimits(varName)[0],
             itemCount: id => this._inventory.count(id),
             totalMonths: () => this._variableStore.getVar('year', true) * 12 + this._variableStore.getVar('month', true),
-            calcEffectValue: (id, base) => {
-                const eItem = this._inventory.calcCombinedEffectValue(id);
-                const eStatus = this._statusTable.calcCombinedEffectValue(id);
-                return (base + eItem[0] + eStatus[0]) * eItem[1] * eStatus[1];
+            getAttributeValue: (id) => {
+                const attribute = this._attributes.get(id);
+                const amountsItem = this._inventory.getCombinedAttributeModifierAmountsOf(attribute);
+                const amountsStatus = this._statusTable.getCombinedAttributeModifierAmountsOf(attribute);
+                const value = AttributeModifier.CalculateAttributeValue(attribute, {
+                    absolute: amountsItem.absolute + amountsStatus.absolute,
+                    relative: amountsItem.relative + amountsStatus.relative,
+                    relativeToBase: amountsItem.relativeToBase + amountsStatus.relativeToBase
+                });
+                return value;
             },
             hasStatus: id => this._statusTable.count(id) > 0,
             random: () => this._random.next(),

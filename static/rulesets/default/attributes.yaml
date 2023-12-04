@@ -1,0 +1,8 @@
+---
+attributes:
+- id: player.experimentBoost
+  baseValue: 0
+- id: player.hopeBoost
+  baseValue: 0
+- id: player.paperAcceptanceBoost
+  baseValue: 0

@@ -1,16 +1,15 @@
-import { EffectProvider, EffectProviderCollection, Modifier, EffectProviderRegistry, EffectCollection, loadEffectCollectionFromJSON } from './effect';
+import { Effect, EffectProvider, EffectProviderCollection, loadEffectsFromObjectArray } from './effect';
 import { downloadAndParse } from '../utils/network';
 import { load as loadYaml } from 'js-yaml';
 import { JsonEncodable, JsonValue } from '../utils/json';
+import { SimpleRegistry } from '../utils/simpleRegistry';
+import { AttributeRegistry } from './attribute';
 
 export class Item implements EffectProvider {
 
     constructor(private _id: string, private _rarity: number,
                 private _icon: string = '',
-                private _effects: EffectCollection = {})
-    {
-
-    }
+                private _effects: Effect[] = []) {}
 
     get id(): string {
         return this._id;
@@ -32,13 +31,21 @@ export class Item implements EffectProvider {
         return this._icon;
     }
 
-    getEffects(): EffectCollection {
+    getEffects(): ReadonlyArray<Effect> {
         return this._effects;
     }
 
 }
 
-export class ItemRegistry extends EffectProviderRegistry<Item> {
+export class ItemRegistry extends SimpleRegistry<Item> {
+
+    constructor(private _attributeRegistry: AttributeRegistry) {
+        super();
+    }
+
+    get name(): string {
+        return 'items';
+    }
 
     async loadItems(url: string): Promise<void> {
         let obj: any = await downloadAndParse(url, loadYaml);
@@ -51,11 +58,12 @@ export class ItemRegistry extends EffectProviderRegistry<Item> {
             if (typeof itemDef['id'] !== 'string') {
                 throw new Error('Missing item id.');
             }
-            let effects: EffectCollection;
-            if (itemDef['effects'] != undefined) {
-                effects = loadEffectCollectionFromJSON(itemDef['effects']);
+            let effects: Effect[];
+            if (Array.isArray(itemDef['effects'])) {
+                effects = loadEffectsFromObjectArray(itemDef['effects'],
+                                                     this._attributeRegistry);
             } else {
-                effects = {};
+                effects = [];
             }
             let rarity = typeof itemDef['rarity'] === 'number' ? itemDef['rarity'] : 0;
             let icon = typeof itemDef['icon'] === 'string' ? itemDef['icon'] : '';

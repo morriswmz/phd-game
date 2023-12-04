@@ -1,5 +1,5 @@
 import { GuiBase } from './guiBase';
-import { SimpleRegistry, IDOwner } from '../utils/simpleRegistry';
+import { SimpleRegistry } from '../utils/simpleRegistry';
 import { EffectProviderCollection, EffectProvider, EffectProviderCollectionChangedEvent } from '../effect/effect';
 import { Item } from '../effect/item';
 import { GameTextEngine } from './textEngine';

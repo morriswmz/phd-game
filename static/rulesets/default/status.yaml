@@ -3,8 +3,9 @@ status:
   - id: firstYear
     duration: 12
     effects:
-      player.hopeBoost:
-        relative: false
+    - attributeModifiers:
+      - target: player.hopeBoost
+        type: Absolute
         amount: 1
   - id: callForPapers
     duration: 6
@@ -13,26 +14,30 @@ status:
   - id: upgradedEquipment
     duration: Infinity
     effects:
-      player.experimentBoost:
-        relative: false
+    - attributeModifiers:
+      - target: player.experimentBoost
+        type: Absolute
         amount: 0.3
   - id: cloudStorage
     duration: Infinity
   - id: exhaustion
     duration: Infinity
     effects:
-      player.hopeBoost:
-        relative: false
+    - attributeModifiers:
+      - target: player.hopeBoost
+        type: Absolute
         amount: -5
   - id: lateYearAnxiety
     duration: Infinity
     effects:
-      player.hopeBoost:
-        relative: false
+    - attributeModifiers:
+      - target: player.hopeBoost
+        type: Absolute
         amount: -1
   - id: unhappyAdvisor
     duration: Infinity
     effects:
-      player.hopeBoost:
-        relative: false
+    - attributeModifiers:
+      - target: player.hopeBoost
+        type: Absolute
         amount: -5

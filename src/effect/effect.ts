@@ -1,12 +1,9 @@
-import { Item } from "./item";
 import { SimpleRegistry } from "../utils/simpleRegistry";
+import { Attribute, AttributeModifier, AttributeModifierSource, AttributeModifierType, AttributeRegistry, CombinedAttributeModifierAmounts } from "./attribute";
 
-export interface Modifier {
-    readonly relative: boolean;
-    readonly amount: number;
+export interface Effect {
+    attributeModifiers: ReadonlyArray<AttributeModifier>;
 }
-
-export type EffectCollection = { [effectId: string]: Modifier; };
 
 /**
  * Loads a effect collection.
@@ -20,24 +17,21 @@ export type EffectCollection = { [effectId: string]: Modifier; };
  *  }
  *  ```
  */
-export function loadEffectCollectionFromJSON(obj: any): EffectCollection {
-    let result: EffectCollection = {};
-    for (const key in obj) {
-        if (obj[key]) {
-            if (result[key]) {
-                throw new Error(`Duplicate definition for "${key}".`);
-            }
-            if (typeof(obj[key]['relative']) !== 'boolean') {
-                throw new Error('Missing relative/absolute definition.');
-            }
-            if (typeof(obj[key]['amount']) !== 'number') {
-                throw new Error('Missing amount.');
-            }
-            result[key] = {
-                relative: obj[key]['relative'],
-                amount: obj[key]['amount']
-            };
+export function loadEffectsFromObjectArray(objArray: any[], registry: AttributeRegistry): Effect[] {
+    let result: Effect[] = [];
+    for (const obj of objArray) {
+        if (!('attributeModifiers' in obj)) continue;
+        if (!Array.isArray(obj['attributeModifiers'])) {
+            throw new Error('Expect `attributeModifiers` to be an array.');
         }
+        let attributeModifiers: AttributeModifier[] = [];
+        for (const modifier of obj['attributeModifiers']) {
+            attributeModifiers.push(
+                AttributeModifier.fromObject(modifier, registry));
+        }
+        result.push({
+            attributeModifiers: attributeModifiers
+        });
     }
     return result;
 }
@@ -53,47 +47,7 @@ export interface EffectProvider {
     /**
      * Retrieves the collection of effects.
      */
-    getEffects(): EffectCollection;
-}
-
-/**
- * Registry for effect providers. Used to retrieve effect provider instances
- * by their id.
- */
-export class EffectProviderRegistry<T extends EffectProvider> implements SimpleRegistry<T> {
-
-    protected _registry: Map<string, T> = new Map();
-
-    add(item: T): void {
-        const existingItem = this._registry.get(item.id);
-        if (existingItem != undefined && existingItem !== item) {
-            throw new Error('Cannot register two different items under the same id.');
-        }
-        this._registry.set(item.id, item);
-    }
-
-    has(item: T | string): boolean {
-        if (typeof item === 'string') {
-            return this._registry.has(item);
-        } else {
-            return this._registry.get(item.id) === item;
-        }
-    }
-
-    get(id: string): T {
-        const existingItem = this._registry.get(id);
-        if (existingItem == undefined) {
-            throw new Error(`Id "${id}" does not exist.`);
-        }
-        return existingItem;
-    }
-
-    forEach(callback: (item: T) => void): void {
-        for (let item of this._registry.values()) {
-            callback(item);
-        }
-    }
-
+    getEffects(): ReadonlyArray<Effect>;
 }
 
 export class EffectProviderCollectionChangedEvent<T extends EffectProvider> {
@@ -115,12 +69,12 @@ export class EffectProviderCollectionChangedEvent<T extends EffectProvider> {
  * An effect provider collection can be a player's inventory or status
  * collection. Each effect provider can have different amounts.
  */
-export class EffectProviderCollection<T extends EffectProvider> {
+export class EffectProviderCollection<T extends EffectProvider> implements AttributeModifierSource {
 
     protected _items: { [id: string]: [T, number]; } = {};
-    protected _registry: EffectProviderRegistry<T>;
+    protected _registry: SimpleRegistry<T>;
 
-    constructor(registry: EffectProviderRegistry<T>) {
+    constructor(registry: SimpleRegistry<T>) {
         this._registry = registry;
     }
 
@@ -193,37 +147,37 @@ export class EffectProviderCollection<T extends EffectProvider> {
         return this._items[item.id] ? this.items[item.id][1] : 0;
     }
 
-    /**
-     * Calculates the combined effect value by considering all the effect
-     * providers in this collection. For instance, if three effect providers in
-     * this collection have effects
-     * {'player.hopeBoost', false, 1.0},
-     * {'player.hopeBoost', true, 0.2} 
-     * {'player.hopeBoost', false, 1.5}, respectively,
-     * then this function will return [2.5, 0.2] for the input
-     * 'player.hopeBoost'.
-     * Equation for calculating the values
-     *  a = sum of absolute modifier values
-     *  m = multiplication of (1.0 + amounts) for relative values
-     * Returns [a, m]
-     * @param effectId Id of the effect.
-     */
-    calcCombinedEffectValue(effectId: string): [number, number] {
-        let a = 0;
-        let m = 1;
-        for (let id in this._items) {
-            let curItem = this._items[id];
-            let curEffects = curItem[0].getEffects();
-            if (effectId in curEffects) {
-                let modifier = curEffects[effectId];
-                if (modifier.relative) {
-                    m += Math.pow(modifier.amount + 1, curItem[1]);
-                } else {
-                    a += modifier.amount * curItem[1];
+    getCombinedAttributeModifierAmountsOf(attribute: Attribute): CombinedAttributeModifierAmounts {
+        let absoluteAmount = 0.0;
+        let relativeAmount = 0.0;
+        let relativeToBaseAmount = 0.0;
+        for (const id in this._items) {
+            const effects = this._items[id][0].getEffects();
+            for (const effect of effects) {
+                for (const attributeModifier of effect.attributeModifiers) {
+                    if (attributeModifier.target !== attribute.id) {
+                        continue;
+                    }
+                    switch (attributeModifier.type) {
+                        case AttributeModifierType.Absolute:
+                            absoluteAmount += attributeModifier.amount;
+                            break;
+                        case AttributeModifierType.Relative:
+                            relativeAmount += attributeModifier.amount;
+                            break;
+                        case AttributeModifierType.RelativeToBase:
+                            relativeToBaseAmount += attributeModifier.amount;
+                            break;
+                        default:
+                    }
                 }
             }
         }
-        return [a, m];
+        return {
+            absolute: absoluteAmount,
+            relative: relativeAmount,
+            relativeToBase: relativeToBaseAmount
+        };
     }
 
     protected dispatchChangeEvent(event: EffectProviderCollectionChangedEvent<T>): void {
