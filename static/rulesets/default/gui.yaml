@@ -16,6 +16,8 @@ statsBar:
     side: right
     updateTrigger:
       variables: ["year", "month"]
+messageWindow:
+  typewriterSpeed: 30
 itemList:
   title: ui.items
   raritySpecificStyles:

@@ -1,6 +1,6 @@
 {
   "name": "phd-game",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A random event driven text-based game engine, for simulating a PhD student's life.",
   "scripts": {
     "build": "npx webpack",

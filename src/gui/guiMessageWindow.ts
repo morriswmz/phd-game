@@ -38,25 +38,47 @@ function segmentMessage(message: string): string[] {
     return segments;
 }
 
+export interface GuiMessageWindowDefinition {
+    // Updates per second.
+    typewriterSpeed?: number;
+}
+
 export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
 
     private _messageContainer: HTMLDivElement;
     private _choicesContainer: HTMLDivElement;
-    private _animate: boolean = true;
+    private _typewriterSpeed: number;
+    private _typewriterFrameTime: number;
 
     /**
      * Creates a message window.
      * @param container Container element.
      * @param textEngine HTML text renderer.
      */
-    constructor(container: HTMLDivElement, textEngine: GameTextEngine) {
+    constructor(container: HTMLDivElement, textEngine: GameTextEngine,
+                definition?: GuiMessageWindowDefinition) {
         super(container, textEngine);
         this._messageContainer = this.createAndAddChild('div', '', 'message_container');
         this._choicesContainer = this.createAndAddChild('div', '', 'choices_container');
+        if (definition == undefined ||
+            definition.typewriterSpeed == undefined) {
+            this._typewriterSpeed = 30.0;
+        } else {
+            if (typeof definition.typewriterSpeed !== 'number' ||
+                isNaN(definition.typewriterSpeed)) {
+                throw new Error('Typewrite speed must be a valid number.');
+            }
+            this._typewriterSpeed = definition.typewriterSpeed;
+        }
+        if (this._typewriterSpeed > 0) {
+            this._typewriterFrameTime = 1000.0 / this._typewriterSpeed;
+        } else {
+            this._typewriterFrameTime = 0.0;
+        }
     }
 
     async displayMessage(message: string, confirm: string, icon?: string): Promise<void> {
-        if (this._animate) {
+        if (this._typewriterSpeed > 0) {
             await this.typewriteMessage(message, icon);
         } else {
             this.updateMessage(message, icon);
@@ -77,7 +99,7 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
     }
 
     async displayChoices(message: string, choices: Array<[string, number]>, icon?: string): Promise<number> {
-        if (this._animate) {
+        if (this._typewriterSpeed > 0) {
             await this.typewriteMessage(message, icon);
         } else {
             this.updateMessage(message, icon);
@@ -126,7 +148,8 @@ export class GuiMessageWindow extends GuiBase<HTMLDivElement> {
                 }
                 const elapsedTime = timestamp - startingTimestamp;
                 // 30 FPS
-                const steps = Math.min(elapsedTime / 33.3333, segments.length);
+                const steps = Math.min(elapsedTime / this._typewriterFrameTime,
+                                       segments.length);
                 while (lastStep < steps) {
                     curText += segments[lastStep];
                     ++lastStep;

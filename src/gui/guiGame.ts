@@ -2,7 +2,7 @@ import { VariableStore, VariableChangedEvent } from '../variableStore';
 import { GuiModalBox } from './guiModalBox';
 import { GuiBase } from './guiBase';
 import { GameEngine } from '../gameEngine';
-import { GuiMessageWindow } from './guiMessageWindow';
+import { GuiMessageWindow, GuiMessageWindowDefinition } from './guiMessageWindow';
 import { GuiItemList, GuiItemListDefinition, GuiStatusList, GuiStatusListDefinition } from './guiEffectProviderList';
 import { GuiFX } from './guiFx';
 import { GameTextEngine } from './textEngine';
@@ -11,6 +11,7 @@ import { GuiStatsBar, GuiStatsBarDefinition } from './guiStatsBar';
 
 export interface GuiGameWindowDefinition {
     statsBar?: GuiStatsBarDefinition;
+    messageWindow?: GuiMessageWindowDefinition;
     itemList?: GuiItemListDefinition;
     statusList?: GuiStatusListDefinition;
     footer?: GuiFooterDefinition;
@@ -45,7 +46,8 @@ export class GuiGameWindow extends GuiBase<HTMLElement> implements GuiGame {
             this.retrieveElement('stats_bar'), textEngine,
             gameEngine.expressionEngine, definition.statsBar);
         this._messageWindow = new GuiMessageWindow(
-            this.retrieveElement('message_window'), textEngine);
+            this.retrieveElement('message_window'), textEngine,
+            definition.messageWindow);
         this._modalBox = new GuiModalBox(
             this.retrieveElement('modal_container'), textEngine);
         this._itemList = new GuiItemList(
