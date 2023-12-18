@@ -1,9 +1,10 @@
 import { EventAction, EventActionExecutionContext, EventActionList, EventActionResult, EventCondition } from './core';
 import { CompiledEventExpression, EventExpressionCompiler } from './expression';
 import { weightedSample } from '../utils/random';
-import { ECExpression, EventConditionFactory } from './conditions';
+import { EventConditionFactory } from './conditions';
 import { SetBuilder } from '../utils/collection';
 import { EndGameState } from '../endGameState';
+import { TranslationKeySource, TranslationKeySourceFactory } from './translationKeySource';
 
 // Note on the usage of typeof.
 // For JSON-like objects, it is safe to check the types of numbers/strings using
@@ -13,6 +14,7 @@ import { EndGameState } from '../endGameState';
 interface EventActionDeserializationContext {
     readonly actionFactory: EventActionFactory;
     readonly conditionFactory: EventConditionFactory;
+    readonly translationKeySourceFactory: TranslationKeySourceFactory;
     readonly expressionCompiler: EventExpressionCompiler;
 }
 
@@ -37,6 +39,7 @@ export class EventActionFactory {
         this._deserializationContext = {
             actionFactory: this,
             conditionFactory: conditionFactory,
+            translationKeySourceFactory: new TranslationKeySourceFactory(conditionFactory, expressionCompiler),
             expressionCompiler: expressionCompiler
         };
     }
@@ -114,7 +117,8 @@ export class EALog extends EventAction {
  */
 export class EADisplayMessage extends EventAction {
 
-    constructor(private _message: string, private _confirm: string,
+    constructor(private _message: TranslationKeySource,
+                private _confirm: TranslationKeySource,
                 private _icon: string) {
         super();
     }
@@ -128,8 +132,8 @@ export class EADisplayMessage extends EventAction {
      *  ```
      *  {
      *      "id": "DisplayMessage",
-     *      "message": string,
-     *      "confirm": string
+     *      "message": TranslationKeySourceDefinition,
+     *      "confirm": TranslationKeySourceDefinition
      *  }
      *  ```
      * @param context Not used.
@@ -139,19 +143,26 @@ export class EADisplayMessage extends EventAction {
         if (obj['confirm'] == undefined) {
             throw new Error('Confirm message missing.');
         }
-        return new EADisplayMessage(obj['message'], obj['confirm'],
-                                    obj['icon'] || '');
+        return new EADisplayMessage(
+            context.translationKeySourceFactory.fromObject(obj['message']),
+            context.translationKeySourceFactory.fromObject(obj['confirm']),
+            obj['icon'] || ''
+        );
     }
 
     execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
-        return context.actionProxy.displayMessage(this._message,
-                                                  this._confirm,
-                                                  this._icon)
-            .then(() => EventActionResult.Ok);
+        return context.actionProxy.displayMessage(
+            this._message.getTranslationKey(context),
+            this._confirm.getTranslationKey(context),
+            this._icon
+        ).then(() => EventActionResult.Ok);
     }
 
     collectTranslationKeys(): Set<string> {
-        return new Set([this._message, this._confirm]);
+        const builder = new SetBuilder<string>();
+        builder.addAll(this._message.collectTranslationKeys());
+        builder.addAll(this._confirm.collectTranslationKeys());
+        return builder.get();
     }
 
 }
@@ -161,7 +172,9 @@ export class EADisplayMessage extends EventAction {
  */
 export class EADisplayRandomMessage extends EventAction {
 
-    constructor(private _messages: string[], private _confirm: string, private _icon: string) {
+    constructor(private _messages: TranslationKeySource[],
+                private _confirm: TranslationKeySource,
+                private _icon: string) {
         super();
     }
 
@@ -174,8 +187,8 @@ export class EADisplayRandomMessage extends EventAction {
      *  ```
      *  {
      *      "id": "DisplayRandomMessage",
-     *      "messages": string[]
-     *      "confirm": string
+     *      "messages": TranslationKeySourceDefinition[]
+     *      "confirm": TranslationKeySourceDefinition
      *      "icon": string | undefined
      *  }
      *  ```
@@ -185,25 +198,37 @@ export class EADisplayRandomMessage extends EventAction {
         if (!Array.isArray(obj['messages'])) {
             throw new Error('Messages missing.');
         }
+        let messages: TranslationKeySource[] = [];
+        for (const message of obj['messages']) {
+            messages.push(
+                context.translationKeySourceFactory.fromObject(message));
+        }
         if (typeof obj['confirm'] !== 'string') {
             throw new Error('Confirm message missing.');
         }
-        return new EADisplayRandomMessage(obj['messages'], obj['confirm'],
-                                          obj['icon'] || '');
+        return new EADisplayRandomMessage(
+            messages,
+            context.translationKeySourceFactory.fromObject(obj['confirm']),
+            obj['icon'] || ''
+        );
     }
 
     execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         const msgId = Math.floor(context.random.next() * this._messages.length);
-        return context.actionProxy.displayMessage(this._messages[msgId],
-                                                  this._confirm,
-                                                  this._icon)
-            .then(() => EventActionResult.Ok);
+        return context.actionProxy.displayMessage(
+            this._messages[msgId].getTranslationKey(context),
+            this._confirm.getTranslationKey(context),
+            this._icon
+        ).then(() => EventActionResult.Ok);
     }
 
     collectTranslationKeys(): Set<string> {
-        let keys = new Set(this._messages);
-        keys.add(this._confirm);
-        return keys;
+        const builder = new SetBuilder<string>(
+            this._confirm.collectTranslationKeys());
+        for (const message of this._messages) {
+            builder.addAll(message.collectTranslationKeys());
+        }
+        return builder.get();
     }
 
 }
@@ -215,7 +240,8 @@ export class EADisplayRandomMessage extends EventAction {
  */
 export class EADisplayChoices extends EventAction {
 
-    constructor(private _message: string, private _choiceMessages: string[],
+    constructor(private _message: TranslationKeySource,
+                private _choiceMessages: TranslationKeySource[],
                 private _requirements: CompiledEventExpression[],
                 private _actions: EventActionList[], private _icon: string)
     {
@@ -234,10 +260,10 @@ export class EADisplayChoices extends EventAction {
      *     ```
      *     {
      *         "id": "DisplayChoices",
-     *         "message": string,
+     *         "message": TranslationKeySourceDefinition,
      *         "choices": [
      *             {
-     *                 "message": string,
+     *                 "message": TranslationKeySourceDefinition,
      *                 "requirement": number | string | undefined,
      *                 "actions": EventAction[] | undefined
      *             }
@@ -250,16 +276,16 @@ export class EADisplayChoices extends EventAction {
      */
     static fromJSONObject(obj: any, context: EventActionDeserializationContext): EADisplayChoices {
         if (obj['message'] == undefined) throw new Error('Message missing.');
+        const message =
+            context.translationKeySourceFactory.fromObject(obj['message']);
         if (!Array.isArray(obj['choices'])) throw new Error('Choices are missing.');
-        let choiceMessages: string[] = [];
+        let choiceMessages: TranslationKeySource[] = [];
         let requirements: CompiledEventExpression[] = [];
         let actions: EventActionList[] = [];
-        for (let c of obj['choices']) {
-            if (c['message'] == undefined) {
-                throw new Error('Missing message for the current choice.');
-            }
-            choiceMessages.push(c['message']);
-            let curActions = Array.isArray(c['actions'])
+        for (const c of obj['choices']) {
+            choiceMessages.push(
+                context.translationKeySourceFactory.fromObject(c['message']));
+            const curActions = Array.isArray(c['actions'])
                 ? context.actionFactory.fromJSONArray(c['actions'])
                 : [];
             actions.push(new EventActionList(curActions));
@@ -271,28 +297,32 @@ export class EADisplayChoices extends EventAction {
                 requirements.push(context.expressionCompiler.compile('true'));
             }
         }
-        return new EADisplayChoices(obj['message'], choiceMessages,
+        return new EADisplayChoices(message, choiceMessages,
                                     requirements, actions, obj['icon'] || '');
     }
 
     execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
         // Build choice array according to requirements.
         let choices: Array<[string, number]> = [];
-        for (let i = 0;i < this._choiceMessages.length;i++) {
+        for (let i = 0; i < this._choiceMessages.length;i++) {
             if (context.evaluator.eval(this._requirements[i])) {
-                choices.push([this._choiceMessages[i], i]);
+                choices.push(
+                    [this._choiceMessages[i].getTranslationKey(context), i]);
             }
         }
-        return context.actionProxy.displayChoices(this._message,
-                                                  choices,
-                                                  this._icon)
-            .then((choiceId) => this._actions[choiceId].execute(context));
+        return context.actionProxy.displayChoices(
+            this._message.getTranslationKey(context),
+            choices,
+            this._icon
+        ).then((choiceId) => this._actions[choiceId].execute(context));
     }
 
     collectTranslationKeys(): Set<string> {
         const builder = new SetBuilder<string>();
-        builder.add(this._message);
-        builder.addAll(this._choiceMessages);
+        builder.addAll(this._message.collectTranslationKeys());
+        for (const choiceMessage of this._choiceMessages) {
+            builder.addAll(choiceMessage.collectTranslationKeys());
+        }
         for (const actionList of this._actions) {
             builder.addAll(actionList.collectTranslationKeys());
         }
@@ -946,7 +976,8 @@ export class EAUpdateItemAmounts extends EventAction {
  */
 export class EAEndGame extends EventAction {
 
-    constructor(private _message: string, private _confirm: string,
+    constructor(private _message: TranslationKeySource,
+                private _confirm: TranslationKeySource,
                 private _winning: boolean, private _fx?: string) {
         super();
     }
@@ -960,8 +991,8 @@ export class EAEndGame extends EventAction {
      *     ```
      *     {
      *         "id": "EndGame",
-     *         "message": string,
-     *         "confirm": string,
+     *         "message": TranslationKeySourceDefinition,
+     *         "confirm": TranslationKeySourceDefinition,
      *         "winning": boolean,
      *         "fx": string | undefined
      *     }
@@ -969,10 +1000,10 @@ export class EAEndGame extends EventAction {
      * @param context Not used.
      */
     static fromJSONObject(obj: any, context: EventActionDeserializationContext): EAEndGame {
-        if (typeof(obj['message']) !== 'string') {
+        if (obj['message'] == undefined) {
             throw new Error('Missing message.');
         }
-        if (typeof(obj['confirm']) !== 'string') {
+        if (obj['confirm'] == undefined) {
             throw new Error('Missing confirm message.');
         }
         if (typeof(obj['winning']) !== 'boolean') {
@@ -981,22 +1012,32 @@ export class EAEndGame extends EventAction {
         if (obj['fx'] && typeof(obj['fx']) !== 'string') {
             throw new Error('FX must be a string.');
         }
-        return new EAEndGame(obj['message'], obj['confirm'], obj['winning'],
-                             obj['fx']);
+        return new EAEndGame(
+            context.translationKeySourceFactory.fromObject(obj['message']),
+            context.translationKeySourceFactory.fromObject(obj['confirm']),
+            obj['winning'],
+            obj['fx']
+        );
     }
 
     execute(context: EventActionExecutionContext): EventActionResult | Promise<EventActionResult> {
-        return context.actionProxy.displayMessage(this._message, this._confirm,
-                                                  '', this._fx)
-            .then(() => {
-                context.setEndGameState(
-                    this._winning ? EndGameState.Win : EndGameState.Loss);
-                return EventActionResult.StopExecutionGlobally;
-            });
+        return context.actionProxy.displayMessage(
+            this._message.getTranslationKey(context),
+            this._confirm.getTranslationKey(context),
+            '',
+            this._fx
+        ).then(() => {
+            context.setEndGameState(
+                this._winning ? EndGameState.Win : EndGameState.Loss);
+            return EventActionResult.StopExecutionGlobally;
+        });
     }
 
     collectTranslationKeys(): Set<string> {
-        return new Set([this._message, this._confirm]);
+        const builder = new SetBuilder<string>();
+        builder.addAll(this._message.collectTranslationKeys());
+        builder.addAll(this._confirm.collectTranslationKeys());
+        return builder.get();
     }
 
 }
