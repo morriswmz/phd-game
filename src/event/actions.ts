@@ -978,7 +978,9 @@ export class EAEndGame extends EventAction {
 
     constructor(private _message: TranslationKeySource,
                 private _confirm: TranslationKeySource,
-                private _winning: boolean, private _fx?: string) {
+                private _winning: boolean,
+                private _endingType?: string,
+                private _fx?: string) {
         super();
     }
 
@@ -994,9 +996,14 @@ export class EAEndGame extends EventAction {
      *         "message": TranslationKeySourceDefinition,
      *         "confirm": TranslationKeySourceDefinition,
      *         "winning": boolean,
+     *         "endingType": string | undefined,
      *         "fx": string | undefined
      *     }
      *     ```
+     *     An optional `endingType` can be supplied to provide additional
+     *     information about the ending. It won't affect ehe display, but will
+     *     be included in GameEndEvent when you directly interface with the
+     *     GameEngine.
      * @param context Not used.
      */
     static fromJSONObject(obj: any, context: EventActionDeserializationContext): EAEndGame {
@@ -1009,6 +1016,9 @@ export class EAEndGame extends EventAction {
         if (typeof(obj['winning']) !== 'boolean') {
             throw new Error('Missing winning status.');
         }
+        if (obj['endingType'] && typeof(obj['endingType']) !== 'string') {
+            throw new Error('"endingType" must be a string if set.')
+        }
         if (obj['fx'] && typeof(obj['fx']) !== 'string') {
             throw new Error('FX must be a string.');
         }
@@ -1016,6 +1026,7 @@ export class EAEndGame extends EventAction {
             context.translationKeySourceFactory.fromObject(obj['message']),
             context.translationKeySourceFactory.fromObject(obj['confirm']),
             obj['winning'],
+            obj['endingType'],
             obj['fx']
         );
     }
@@ -1028,7 +1039,9 @@ export class EAEndGame extends EventAction {
             this._fx
         ).then(() => {
             context.setEndGameState(
-                this._winning ? EndGameState.Win : EndGameState.Loss);
+                this._winning ? EndGameState.Win : EndGameState.Loss,
+                this._endingType
+            );
             return EventActionResult.StopExecutionGlobally;
         });
     }

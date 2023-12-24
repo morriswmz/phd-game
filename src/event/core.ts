@@ -63,7 +63,7 @@ export interface EventActionExecutionContext extends EventConditionEvaluationCon
     readonly statusTable: StatusTable;
     readonly eventEngine: GameEventEngine;
     readonly actionProxy: GuiActionProxy;
-    setEndGameState(state: EndGameState): void;
+    setEndGameState(state: EndGameState, endingType?: string): void;
 }
 
 export enum EventActionResult {

@@ -24,6 +24,13 @@ function newSeedFromNativeRandom(): string {
     return Math.random().toString().substring(2);
 }
 
+export class GameEndEvent {
+    constructor(public readonly state: EndGameState,
+                public readonly endingType: string) { }
+}
+
+type GameEndedEventHandler = (sender: GameEngine, event: GameEndEvent) => void;
+
 /**
  * Central class for the game.
  */
@@ -38,6 +45,7 @@ export class GameEngine {
     private _statusTable: StatusTable;
     private _variableStore: VariableStore;
     private _endGameState: EndGameState;
+    private _endingType: string;
     private _random: AleaRandomSource;
     private _expressionEngine: EventExpressionEngine;
     private _eventEngine: GameEventEngine;
@@ -46,6 +54,11 @@ export class GameEngine {
     private _executionContext: EventActionExecutionContext;
 
     private _dataLoaded: boolean = false;
+
+    /**
+     * Gets/sets the callback when the game ends.
+     */
+    onGameEnd?: GameEndedEventHandler;
 
     constructor(config: GameConfig, ap: GuiActionProxy) {
         // Copy the configuration.
@@ -58,6 +71,7 @@ export class GameEngine {
         this._statusTable = new StatusTable(this._statusRegistry);
         this._variableStore = new VariableStore();
         this._endGameState = EndGameState.None;
+        this._endingType = '';
         this._random = new AleaRandomSource(
             this._config.initialRandomSeed == undefined
                 ? newSeedFromNativeRandom()
@@ -79,7 +93,12 @@ export class GameEngine {
             evaluator: this._expressionEngine,
             eventEngine: this._eventEngine,
             actionProxy: ap,
-            setEndGameState: (state) => this._endGameState = state,
+            setEndGameState: (state, endingType) => {
+                this._endGameState = state
+                if (endingType) {
+                    this._endingType = endingType;
+                }
+            },
         };
     }
 
@@ -253,6 +272,12 @@ export class GameEngine {
                 this._executionContext);
             if (this._endGameState !== EndGameState.None) {
                 // Restart the game
+                if (this.onGameEnd) {
+                    this.onGameEnd(
+                        this,
+                        new GameEndEvent(this._endGameState, this._endingType)
+                    );
+                }
                 await this.start(this._endGameState === EndGameState.Win);
                 return;
             } else if (!pending) {
