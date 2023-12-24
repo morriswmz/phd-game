@@ -57,7 +57,15 @@ class App {
             this._config.guiDefinitionUrl, loadYaml);
         let gui = new GuiGameWindow(this._container, textEngine,
                                     this._gameEngine, guiDef);
-        this._actionProxy.attachGui(gui);       
+        this._actionProxy.attachGui(gui);
+        this._gameEngine.onGameEnd = (sender, event) => {
+            window.dispatchEvent(new CustomEvent('gameEnd', {
+                detail: {
+                    state: event.state,
+                    endingType: event.endingType
+                }
+            }));
+        };
         await this._gameEngine.start(false);
         // Debugging info for translation keys
         if (this._config.debugConfig) {
